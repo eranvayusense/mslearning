@@ -1,0 +1,86 @@
+Metadata-Version: 1.1
+Name: loess
+Version: 2.0.11
+Summary: LOESS: Local Regression Smoothing in One or Two Dimensions
+Home-page: http://purl.org/cappellari/software
+Author: Michele Cappellari
+Author-email: michele.cappellari@physics.ox.ac.uk
+License: Other/Proprietary License
+Description: The LOESS Package
+        =================
+        
+        **Local Regression Smoothing in One or Two Dimensions**
+        
+        .. image:: https://img.shields.io/pypi/v/loess.svg
+                :target: https://pypi.org/project/loess/
+        .. image:: https://img.shields.io/badge/arXiv-1208.3523-orange.svg
+            :target: https://arxiv.org/abs/1208.3523
+        .. image:: https://img.shields.io/badge/DOI-10.1093/mnras/stt644-blue.svg
+                :target: https://doi.org/10.1093/mnras/stt644
+        
+        LOESS is a Python implementation of the Local Regression Smoothing method of
+        `Cleveland (1979) <http://www.jstor.org/stable/2286407>`_ (in 1-dim) and
+        `Cleveland & Devlin (1988) <http://www.jstor.org/stable/2289282>`_ (in 2-dim).
+        
+        Attribution
+        -----------
+        
+        If you use this software for your research, please cite the LOESS package of
+        `Cappellari et al. (2013b) <http://adsabs.harvard.edu/abs/2013MNRAS.432.1862C>`_,
+        where the implementation was described. The BibTeX entry for the paper is::
+        
+            @ARTICLE{Cappellari2013b,
+                author = {{Cappellari}, M. and {McDermid}, R.~M. and {Alatalo}, K. and 
+                    {Blitz}, L. and {Bois}, M. and {Bournaud}, F. and {Bureau}, M. and 
+                    {Crocker}, A.~F. and {Davies}, R.~L. and {Davis}, T.~A. and 
+                    {de Zeeuw}, P.~T. and {Duc}, P.-A. and {Emsellem}, E. and {Khochfar}, S. and 
+                    {Krajnovi{\'c}}, D. and {Kuntschner}, H. and {Morganti}, R. and 
+                    {Naab}, T. and {Oosterloo}, T. and {Sarzi}, M. and {Scott}, N. and 
+                    {Serra}, P. and {Weijmans}, A.-M. and {Young}, L.~M.},
+                title = "{The ATLAS$^{3D}$ project - XX. Mass-size and mass-{$\sigma$}
+                    distributions of early-type galaxies: bulge fraction drives kinematics,
+                    mass-to-light ratio, molecular gas fraction and stellar initial mass
+                    function}",
+                journal = {MNRAS},
+                eprint = {1208.3523},
+                 year = 2013,
+                volume = 432,
+                pages = {1862-1893},
+                  doi = {10.1093/mnras/stt644}
+            }
+        
+        Installation
+        ------------
+        
+        install with::
+        
+            pip install loess
+        
+        Without writing access to the global ``site-packages`` directory, use::
+        
+            pip install --user loess
+        
+        Documentation
+        -------------
+        
+        See ``loess/examples`` and the files headers.
+        
+        License
+        -------
+        
+        Copyright (c) 2010-2018 Michele Cappellari
+        
+        This software is provided as is without any warranty whatsoever.
+        Permission to use, for non-commercial purposes is granted.
+        Permission to modify for personal or internal use is granted,
+        provided this copyright and disclaimer are included in all
+        copies of the software. All other rights are reserved.
+        In particular, redistribution of the code is not allowed.
+        
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Science/Research
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3

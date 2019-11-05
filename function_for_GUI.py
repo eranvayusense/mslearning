@@ -412,6 +412,77 @@ def feature_extractor(selectedTypesOfFeatures, interpWantedData):
     return featureNames, featuresDF, resultsDF
 
 
+def feature_extractor_multiple_meas(selectedTypesOfFeatures, interpWantedData):
+    import numpy as np
+    import pandas as pd
+    featureNames = []
+    featuresDF = pd.DataFrame()
+    relMeasDF = []
+    relExp = list(interpWantedData.keys())
+    if 'expNames' in relExp:
+        relExp.remove('expNames')
+    for exp in relExp:
+        expDF = pd.DataFrame()
+        for feature in selectedTypesOfFeatures:
+            if feature == 'Mean dO [40-end]':
+                featName = 'meanDO'
+                if featName not in featureNames:
+                    featureNames.append(featName)
+                expDF[featName] = interpWantedData[exp]['DO'][40:]
+            elif feature == 'Mean Ammonia [40-end]':
+                featName = 'meanAmm'
+                if featName not in featureNames:
+                    featureNames.append(featName)
+                expDF[featName] = interpWantedData[exp]['Ammonia[percent]'][40:]
+            elif feature == 'Mean Dextrose [40-end]':
+                featName = 'meanS'
+                if featName not in featureNames:
+                    featureNames.append(featName)
+                expDF[featName] = interpWantedData[exp]['Dextrose[percent]'][40:]
+            elif feature == 'Mean pH [40-end]':
+                featName = 'meanpH'
+                if featName not in featureNames:
+                    featureNames.append(featName)
+                expDF[featName] = interpWantedData[exp]['pH_x'][40:]
+            elif feature == 'Mean Agitation [40-end]':
+                featName = 'meanAgi'
+                if featName not in featureNames:
+                    featureNames.append(featName)
+                expDF[featName] = interpWantedData[exp]['Agitation'][40:]
+            elif feature == 'Sum Ammonia feeding [40-end]':
+                featName = 'meanAmmFeed'
+                if featName not in featureNames:
+                    featureNames.append(featName)
+                expDF[featName] = interpWantedData[exp]['Fa'][40:]
+            elif feature == 'Time dextrose low':
+                featName = 'TimeDexLow'
+                if featName not in featureNames:
+                    featureNames.append(featName)
+                expDF[featName] = interpWantedData[exp]['Fa'][40:]
+
+        Titter = []
+        Impurity = []
+        expDF['Titter'] = interpWantedData[exp]['Tobramycin']
+        titterNotNan = pd.notna(expDF['Titter'])
+        titterNotNanIdx = expDF.index[titterNotNan]
+        # for meas in range(len(titterNotNanIdx.to_list())):
+            
+        expDF['Titter'][titterNotNanIdx]
+        expDF['Impurity'] = interpWantedData[exp]['Kanamycin'] /\
+                            (interpWantedData[exp]['Kanamycin'] + interpWantedData[exp]['Tobramycin'])
+
+        featuresDF = featuresDF.append(expDF)
+    featuresDF.dropna(inplace=True)
+    resultsDF = pd.DataFrame()
+    resultsDF['Titter'] = featuresDF['Titter']
+    resultsDF['Impurity'] = featuresDF['Impurity']
+    featuresDF.drop('Titter', axis=1, inplace=True)
+    featuresDF.drop('Impurity', axis=1, inplace=True)
+    return featureNames, featuresDF, resultsDF
+
+
+
+
 def read_rnd_data(selectedExp):
     import numpy as np
     import pandas as pd
@@ -593,7 +664,7 @@ def correlation_function_df(selectedTypesOfTest, selectedTypesOfVar, typesOfVari
     elif preprocessingTechnique == 'No preprocessing':
         allexpDataframeProcessed = allexpDataframe
     elif preprocessingTechnique == 'scaling (0-1)':
-        allexpDataframeProcessed == MinMaxScaler().fit(allexpDataframe)
+        allexpDataframeProcessed = MinMaxScaler().fit_transform(allexpDataframe)
         allexpDataframeProcessed = pd.DataFrame(allexpDataframeProcessed, columns=allexpDataframe.columns)
     correlationDataFrame = allexpDataframeProcessed.corr(method='pearson')
     return correlationDataFrame, allexpDataframe

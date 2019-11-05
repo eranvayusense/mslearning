@@ -9,6 +9,10 @@ from itertools import combinations
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import RobustScaler
+#import skmisc.loess
+from loess.loess_2d import loess_2d
+from loess.examples import test_loess_1d
+from plotbin.plot_velfield import plot_velfield
 
 # from PIL import ImageTk, Image
 import os
@@ -363,23 +367,25 @@ elif methodType == "K-means":
 
     #execute Kmeans algorithm
     Settings, Const, InitCond = simulation_initialization()
-    if isLoadData:
-        data = load_data_df(isLoadData, selectedExp)
-        interpWantedData = data_interp_df(data, selectedExp)
-    else:
-        interpWantedData = load_data_df(isLoadData, selectedExp)
+    #if isLoadData:
+    #   data = load_data_df(isLoadData, selectedExp)
+    #    interpWantedData = data_interp_df(data, selectedExp)
+    #else:
+    #    interpWantedData = load_data_df(isLoadData, selectedExp)
 
-    trainData, testData = devide_data(interpWantedData)
-    if isLoadData:
-        del data, interpWantedData
-    else:
-        del interpWantedData
+    data = load_data_df(1, selectedExp)
+    trainData, testData = devide_data(data)
+    #if isLoadData:
+    #    del data, interpWantedData
+    #else:
+    #    del interpWantedData
+    del data
     # data, offlineData = load_data(isLoadData, selectedExp)
     # interpWantedData = data_interp(data, offlineData, selectedExp, Const)
     # trainData, testData = devide_data(interpWantedData)
     # del data, offlineData, interpWantedData
-    featureNames, featuresTrainDF, resultsTrainDF = feature_extractor(selectedTypesOfFeatures, trainData)
-    featureNames, featuresTestDF, resultsTestDF = feature_extractor(selectedTypesOfFeatures, testData)
+    featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, trainData)
+    featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, testData)
     if preprocessingTechnique == 'Standardize (Robust scalar)':
         FeatureTrainProcessed = RobustScaler().fit_transform(featuresTrainDF)
         FeatureTestProcessed = RobustScaler().fit_transform(featuresTestDF)
@@ -397,44 +403,64 @@ elif methodType == "K-means":
     k.fit(FeatureTrainProcessed)
     predicted_classification = k.predict(FeatureTestProcessed)
     plt.figure()
-    plt.scatter(resultsTestDF['finalTitter'], resultsTestDF['finalImpurity'], c=predicted_classification)
+    plt.scatter(resultsTestDF['Titter'], resultsTestDF['Impurity'], c=predicted_classification)
     plt.figure()
-    plt.scatter(resultsTrainDF['finalTitter'], resultsTrainDF['finalImpurity'], c=k.labels_)
-    plt.show()
+    plt.scatter(resultsTrainDF['Titter'], resultsTrainDF['Impurity'], c=k.labels_)
+    # plt.show()
     q=2
 
 elif methodType == "Correlations":
-    def get_list_tests(event):
-        """
-        function to read the listbox selection
-        and put the result in an entry widget
-        """
-        index = testListbox.curselection()
-        # get the line's text
-        for i in range(0, len(index)):
-            selText = testListbox.get(index[i])
-        # delete previous text in enter1
-        # enter1.delete(0, 50)
-        # now display the selected text
-        selectedTypesOfTest.append(selText)
+    # def get_list_tests(event):
+    #     """
+    #     function to read the listbox selection
+    #     and put the result in an entry widget
+    #     """
+    #     index = testListbox.curselection()
+    #     # get the line's text
+    #     for i in range(0, len(index)):
+    #         selText = testListbox.get(index[i])
+    #     # delete previous text in enter1
+    #     # enter1.delete(0, 50)
+    #     # now display the selected text
+    #     selectedTypesOfTest.append(selText)
 
     def get_list_var(event):
-        """
-        function to read the listbox selection
-        and put the result in an entry widget
-        """
+        global selectedTypesOfVar, selectedTypesOfTest
         index = varListbox.curselection()
         indextest = testListbox.curselection()
         # get the line's text
+        selText = []
+        selTextTest = []
         for i in range(0, len(index)):
-            selText = varListbox.get(index[i])
+            # selText = FeaturesListbox.get(index[i])
+            selText.append(varListbox.get(index[i]))
+
         for i in range(0, len(indextest)):
-            selTextTest = testListbox.get(indextest[i])
+            # selText = FeaturesListbox.get(index[i])
+            selTextTest.append(testListbox.get(indextest[i]))
         # delete previous text in enter1
         # enter1.delete(0, 50)
         # now display the selected text
-        selectedTypesOfVar.append(selText)
-        selectedTypesOfTest.append(selTextTest)
+        # selectedTypesOfFeatures.append(selText)
+        selectedTypesOfVar = selText
+        selectedTypesOfTest = selTextTest
+
+        """
+        function to read the listbox selection
+        and put the result in an entry widget
+        """
+        # index = varListbox.curselection()
+        # indextest = testListbox.curselection()
+        # # get the line's text
+        # for i in range(0, len(index)):
+        #     selText = varListbox.get(index[i])
+        # for i in range(0, len(indextest)):
+        #     selTextTest = testListbox.get(indextest[i])
+        # # delete previous text in enter1
+        # # enter1.delete(0, 50)
+        # # now display the selected text
+        # selectedTypesOfVar.append(selText)
+        # selectedTypesOfTest.append(selTextTest)
 
 
     def passForword():
@@ -537,36 +563,88 @@ elif methodType == "Correlations":
         plt.title("score #{}: {} as a function of {}".format(round(relScore,2), relCombo[1], relCombo[0]))
         plt.xlabel(relCombo[0])
         plt.ylabel(relCombo[1])
-    plt.show()
+    # plt.show()
 
 
+
+
+# os.system("pause")
+
+selectedTypesOfFeatures = ['Mean dO [40-end]', 'Mean Ammonia [40-end]', 'Mean Dextrose [40-end]', 'Mean pH [40-end]',
+                 'Mean Agitation [40-end]', 'Sum Ammonia feeding [40-end]', 'Time dextrose low'
+                 'Peak dO level']
+# selectedTypesOfFeatures = ['Mean dO [40-end]', 'Mean Ammonia [40-end]']
+featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, trainData)
+featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, testData)
+trainTimes = featuresTrainDF.index.values #times of all measurements in numpy format
+for meas in range(len(trainTimes)):
+    if
+if preprocessingTechnique == 'Standardize (Robust scalar)':
+    FeatureTrainProcessed = RobustScaler().fit_transform(featuresTrainDF)
+    FeatureTestProcessed = RobustScaler().fit_transform(featuresTestDF)
+    resultsTrainProcessed = RobustScaler().fit_transform(resultsTrainDF)
+    resultsTestProcessed = RobustScaler().fit_transform(resultsTestDF)
+    FeatureTrainProcessed = pd.DataFrame(FeatureTrainProcessed, columns=featureNames)
+    FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
+    resultsTrainProcessed = pd.DataFrame(resultsTrainProcessed, columns=['Titter', 'Impurity'])
+    resultsTestProcessed = pd.DataFrame(resultsTestProcessed, columns=['Titter', 'Impurity'])
+elif preprocessingTechnique == 'No preprocessing':
+    FeatureTrainProcessed = featuresTrainDF
+    FeatureTestProcessed = featuresTestDF
+    resultsTrainProcessed = resultsTrainDF
+    resultsTestProcessed = resultsTestDF
+elif preprocessingTechnique == 'scaling (0-1)':
+    FeatureTrainProcessed == MinMaxScaler().fit(featuresTrainDF)
+    FeatureTestProcessed == MinMaxScaler().fit(featuresTestDF)
+    resultsTrainProcessed = MinMaxScaler().fit_transform(resultsTrainDF)
+    resultsTestProcessed = MinMaxScaler().fit_transform(resultsTestDF)
+    FeatureTrainProcessed = pd.DataFrame(FeatureTrainProcessed, columns=featureNames)
+    FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
+    resultsTrainProcessed = pd.DataFrame(resultsTrainProcessed, columns=['Titter', 'Impurity'])
+    resultsTestProcessed = pd.DataFrame(resultsTestProcessed, columns=['Titter', 'Impurity'])
+featuresTrainNP = FeatureTrainProcessed.to_numpy()
+titterTrainNP = resultsTrainProcessed['Titter'].to_numpy()
+featuresTestNP = FeatureTestProcessed.to_numpy()
+trainTimes = resultsTrainProcessed.index.values #times of all measurements in numpy format
+# sectionDecisionType = "radius"
+# radius = 2 #hours
+# loessModel = skmisc.loess(featuresTrainNP, titterTrainNP)
+zout, wout = loess_2d(featuresTrainNP[:, 1], featuresTrainNP[:, 2], titterTrainNP, 1)
+plt.figure()
+plot_velfield(featuresTrainNP[:, 1], featuresTrainNP[:, 2], titterTrainNP, 1)
+for sample in range(featuresTestDF.size):
+    currentTime = featuresTestDF.iloc[sample].name
+    timeDelta = abs(trainTimes-currentTime)
+    if sectionDecisionType == "radius":
+        relMeasIdx = np.where(timeDelta <= radius)
+        currentTime = featuresTrainDF.iloc[relMeasIdx]
 
 
 # experiments to be tested
-variables = ['S', 'DO', 'A']# which variables to analyse
-isLoadFromExcel = 0# 0 if data loaded from .p file, 1 if from excel
-
+# variables = ['S', 'DO', 'A']# which variables to analyse
+# isLoadFromExcel = 0# 0 if data loaded from .p file, 1 if from excel
+q=2
 # initialize settings, constants and initial conditions
-
+plt.show()
 
 # load the data
-if isLoadFromExcel:
-    data, offlineData = read_data(experiments)
-else:
-    file_name = "allData.p"
-    with open(file_name, 'rb') as f:
-        allData = pickle.load(f)
-    data = {key: allData[key] for key in allData.keys() & experiments}
-    file_name = "allOfflineData.p"
-    with open(file_name, 'rb') as f:
-        allOfflineData = pickle.load(f)
-    string = '_dex'
-    offlineData = {key: allOfflineData[key] for key in allOfflineData.keys() & [x+string for x in experiments]}
-
-#Interpulate data
-
-
-#Initialize
-functionCombos = [p for p in itertools.product(functionOptions, repeat=3)]
+# if isLoadFromExcel:
+#     data, offlineData = read_data(experiments)
+# else:
+#     file_name = "allData.p"
+#     with open(file_name, 'rb') as f:
+#         allData = pickle.load(f)
+#     data = {key: allData[key] for key in allData.keys() & experiments}
+#     file_name = "allOfflineData.p"
+#     with open(file_name, 'rb') as f:
+#         allOfflineData = pickle.load(f)
+#     string = '_dex'
+#     offlineData = {key: allOfflineData[key] for key in allOfflineData.keys() & [x+string for x in experiments]}
+#
+# #Interpulate data
+#
+#
+# #Initialize
+# functionCombos = [p for p in itertools.product(functionOptions, repeat=3)]
 
 

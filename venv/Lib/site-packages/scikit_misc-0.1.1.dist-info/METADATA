@@ -1,0 +1,26 @@
+Metadata-Version: 2.1
+Name: scikit-misc
+Version: 0.1.1
+Summary: Miscellaneous tools for scientific computing.
+Home-page: https://github.com/has2k1/scikit-misc
+Maintainer: Hassan Kibirige
+Maintainer-email: has2k1@gmail.com
+License: BSD (3-clause)
+Platform: UNKNOWN
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: Unix
+Classifier: Operating System :: MacOS
+Classifier: Programming Language :: C
+Classifier: Programming Language :: Fortran
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Scientific/Engineering
+Requires-Dist: numpy
+
+
+scikit-misc
+
+Miscellaneous tools for data analysis and scientific computing.
+
+
