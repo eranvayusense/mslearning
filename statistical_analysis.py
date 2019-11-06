@@ -395,8 +395,8 @@ elif methodType == "K-means":
         FeatureTrainProcessed = featuresTrainDF
         FeatureTestProcessed = featuresTestDF
     elif preprocessingTechnique == 'scaling (0-1)':
-        FeatureTrainProcessed == MinMaxScaler().fit(featuresTrainDF)
-        FeatureTestProcessed == MinMaxScaler().fit(featuresTestDF)
+        FeatureTrainProcessed = MinMaxScaler().fit_transform(featuresTrainDF)
+        FeatureTestProcessed = MinMaxScaler().fit_transform(featuresTestDF)
         FeatureTrainProcessed = pd.DataFrame(FeatureTrainProcessed, columns=featureNames)
         FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
     k = KMeans(n_clusters=nMeans)
@@ -577,27 +577,58 @@ selectedTypesOfFeatures = ['Mean dO [40-end]', 'Mean Ammonia [40-end]', 'Mean De
 featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, trainData)
 featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, testData)
 trainTimes = featuresTrainDF.index.values #times of all measurements in numpy format
-for meas in range(len(trainTimes)):
-    if
+testTimes = featuresTestDF.index.values #times of all measurements in numpy format
+featuresTrainAvgDF = pd.DataFrame()
+resultsTrainDeltaDF = pd.DataFrame()
+for meas in range(len(trainTimes)-1):
+    if trainTimes[meas] < trainTimes[meas+1]:
+        avgTime = (trainTimes[meas] + trainTimes[meas + 1]) / 2
+        avgFeatures = (featuresTrainDF.iloc[meas] + featuresTrainDF.iloc[meas+1])/2
+        avgFeatures.name = avgTime
+        deltaResults = (resultsTrainDF.iloc[meas+1] - resultsTrainDF.iloc[meas])/(trainTimes[meas + 1] - trainTimes[meas])
+        deltaResults.name = avgTime
+        featuresTrainAvgDF = featuresTrainAvgDF.append(avgFeatures)
+        resultsTrainDeltaDF = resultsTrainDeltaDF.append(deltaResults)
+featuresTrainAvgDF = featuresTrainAvgDF.reindex(featuresTrainDF.columns, axis=1)
+resultsTrainDeltaDF = resultsTrainDeltaDF.reindex(resultsTrainDF.columns, axis=1)
+featuresTrainAvgDF['Time'] = featuresTrainAvgDF.index
+
+featuresTestAvgDF = pd.DataFrame()
+resultsTestDeltaDF = pd.DataFrame()
+for meas in range(len(testTimes)-1):
+    if testTimes[meas] < testTimes[meas+1]:
+        avgTime = (testTimes[meas] + testTimes[meas + 1]) / 2
+        avgFeatures = (featuresTestDF.iloc[meas] + featuresTestDF.iloc[meas+1])/2
+        avgFeatures.name = avgTime
+        deltaResults = (resultsTestDF.iloc[meas+1] - resultsTestDF.iloc[meas])/(testTimes[meas + 1] - testTimes[meas])
+        deltaResults.name = avgTime
+        featuresTestAvgDF = featuresTestAvgDF.append(avgFeatures)
+        resultsTestDeltaDF = resultsTestDeltaDF.append(deltaResults)
+featuresTestAvgDF = featuresTestAvgDF.reindex(featuresTestDF.columns, axis=1)
+resultsTestDeltaDF = resultsTestDeltaDF.reindex(resultsTestDF.columns, axis=1)
+featuresTestAvgDF['Time'] = featuresTestAvgDF.index
+
+featureNames.append('Time')#append time to feature names for further analysis
+
 if preprocessingTechnique == 'Standardize (Robust scalar)':
-    FeatureTrainProcessed = RobustScaler().fit_transform(featuresTrainDF)
-    FeatureTestProcessed = RobustScaler().fit_transform(featuresTestDF)
-    resultsTrainProcessed = RobustScaler().fit_transform(resultsTrainDF)
-    resultsTestProcessed = RobustScaler().fit_transform(resultsTestDF)
+    FeatureTrainProcessed = RobustScaler().fit_transform(featuresTrainAvgDF)
+    FeatureTestProcessed = RobustScaler().fit_transform(featuresTestAvgDF)
+    resultsTrainProcessed = RobustScaler().fit_transform(resultsTrainDeltaDF)
+    resultsTestProcessed = RobustScaler().fit_transform(resultsTestDeltaDF)
     FeatureTrainProcessed = pd.DataFrame(FeatureTrainProcessed, columns=featureNames)
     FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
     resultsTrainProcessed = pd.DataFrame(resultsTrainProcessed, columns=['Titter', 'Impurity'])
     resultsTestProcessed = pd.DataFrame(resultsTestProcessed, columns=['Titter', 'Impurity'])
 elif preprocessingTechnique == 'No preprocessing':
-    FeatureTrainProcessed = featuresTrainDF
-    FeatureTestProcessed = featuresTestDF
-    resultsTrainProcessed = resultsTrainDF
-    resultsTestProcessed = resultsTestDF
+    FeatureTrainProcessed = featuresTrainAvgDF
+    FeatureTestProcessed = featuresTestAvgDF
+    resultsTrainProcessed = resultsTrainDeltaDF
+    resultsTestProcessed = resultsTestDeltaDF
 elif preprocessingTechnique == 'scaling (0-1)':
-    FeatureTrainProcessed == MinMaxScaler().fit(featuresTrainDF)
-    FeatureTestProcessed == MinMaxScaler().fit(featuresTestDF)
-    resultsTrainProcessed = MinMaxScaler().fit_transform(resultsTrainDF)
-    resultsTestProcessed = MinMaxScaler().fit_transform(resultsTestDF)
+    FeatureTrainProcessed = MinMaxScaler().fit_transform(featuresTrainAvgDF)
+    FeatureTestProcessed = MinMaxScaler().fit_transform(featuresTestAvgDF)
+    resultsTrainProcessed = MinMaxScaler().fit_transform(resultsTrainDeltaDF)
+    resultsTestProcessed = MinMaxScaler().fit_transform(resultsTestDeltaDF)
     FeatureTrainProcessed = pd.DataFrame(FeatureTrainProcessed, columns=featureNames)
     FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
     resultsTrainProcessed = pd.DataFrame(resultsTrainProcessed, columns=['Titter', 'Impurity'])
@@ -609,7 +640,30 @@ trainTimes = resultsTrainProcessed.index.values #times of all measurements in nu
 # sectionDecisionType = "radius"
 # radius = 2 #hours
 # loessModel = skmisc.loess(featuresTrainNP, titterTrainNP)
-zout, wout = loess_2d(featuresTrainNP[:, 1], featuresTrainNP[:, 2], titterTrainNP, 1)
+selectedVar = ['Time', 'meanS']# The options are: ['meanDO', 'meanAmm','meanS','meanpH','meanAgi','meanAmmFeed', 'Time']
+firstVarNP = FeatureTrainProcessed[selectedVar[0]].to_numpy()
+secondVarNP = FeatureTrainProcessed[selectedVar[1]].to_numpy()
+zout, wout = loess_2d(firstVarNP, secondVarNP, titterTrainNP, frac=0.2, degree=1, rescale=True)
+
+plt.clf()
+plt.subplot(121)
+plot_velfield(firstVarNP, secondVarNP, titterTrainNP)
+plt.xlabel(selectedVar[0])
+plt.ylabel(selectedVar[1])
+plt.title("True Function")
+
+# plt.subplot(132)
+# plot_velfield(x, y, zran)
+# plt.title("With Noise Added")
+# plt.tick_params(labelleft=False)
+
+plt.subplot(122)
+plot_velfield(firstVarNP, secondVarNP, zout)
+plt.title("LOESS Recovery")
+plt.xlabel(selectedVar[0])
+plt.ylabel(selectedVar[1])
+plt.tick_params(labelleft=False)
+plt.show()
 plt.figure()
 plot_velfield(featuresTrainNP[:, 1], featuresTrainNP[:, 2], titterTrainNP, 1)
 for sample in range(featuresTestDF.size):
