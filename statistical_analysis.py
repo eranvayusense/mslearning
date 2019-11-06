@@ -62,7 +62,8 @@ def passForword():
     return preprocessingTechnique
 
 C = Canvas(master, bg="blue", height=250, width=300)
-filename = PhotoImage(file="C:\\Users\\admin\PycharmProjects\\tobra_model\\statistics_pic1_with_logo.png")
+# filename = PhotoImage(file="C:\\Users\\admin\PycharmProjects\\tobra_model\\statistics_pic1_with_logo.png")
+filename = PhotoImage(file="statistics_pic1_with_logo.png")
 background_label = Label(master, image=filename)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
 master.geometry('900x500')
@@ -173,7 +174,8 @@ if methodType == "Function Search":
 
     funcSearch = Tk()
     C = Canvas(funcSearch, bg="blue", height=250, width=300)
-    filename = PhotoImage(file="C:\\Users\\admin\PycharmProjects\\tobra_model\\statistics_pic1_with_logo.png")
+    # filename = PhotoImage(file="C:\\Users\\admin\PycharmProjects\\tobra_model\\statistics_pic1_with_logo.png")
+    filename = PhotoImage(file="statistics_pic1_with_logo.png")
     background_label = Label(funcSearch, image=filename)
     background_label.place(x=0, y=0, relwidth=1, relheight=1)
     funcSearch.geometry('900x500')
@@ -320,7 +322,8 @@ elif methodType == "K-means":
                      'Peak dO level']
     K_means = Tk()
     C = Canvas(K_means, bg="blue", height=250, width=300)
-    filename = PhotoImage(file="C:\\Users\\admin\PycharmProjects\\tobra_model\\statistics_pic1_with_logo.png")
+    # filename = PhotoImage(file="C:\\Users\\admin\PycharmProjects\\tobra_model\\statistics_pic1_with_logo.png")
+    filename = PhotoImage(file="statistics_pic1_with_logo.png")
     background_label = Label(K_means, image=filename)
     background_label.place(x=0, y=0, relwidth=1, relheight=1)
     K_means.geometry('900x500')
@@ -479,7 +482,8 @@ elif methodType == "Correlations":
 
     correlations = Tk()
     C = Canvas(correlations, bg="blue", height=250, width=300)
-    filename = PhotoImage(file="C:\\Users\\admin\PycharmProjects\\tobra_model\\statistics_pic1_with_logo.png")
+    # filename = PhotoImage(file="C:\\Users\\admin\PycharmProjects\\tobra_model\\statistics_pic1_with_logo.png")
+    filename = PhotoImage(file="statistics_pic1_with_logo.png")
     background_label = Label(correlations, image=filename)
     background_label.place(x=0, y=0, relwidth=1, relheight=1)
     correlations.geometry('900x500')
