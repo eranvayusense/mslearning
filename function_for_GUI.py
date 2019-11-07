@@ -668,3 +668,124 @@ def correlation_function_df(selectedTypesOfTest, selectedTypesOfVar, typesOfVari
         allexpDataframeProcessed = pd.DataFrame(allexpDataframeProcessed, columns=allexpDataframe.columns)
     correlationDataFrame = allexpDataframeProcessed.corr(method='pearson')
     return correlationDataFrame, allexpDataframe
+
+def polyfit_2d_coeff(x, y, z,x_test,y_test, degree, sigz=None, weights=None):
+    """
+    Fit a bivariate polynomial of given DEGREE to a set of points
+    (X, Y, Z), assuming errors SIGZ in the Z variable only.
+
+    For example with DEGREE=1 this function fits a plane
+
+       z = a + b*x + c*y
+
+    while with DEGREE=2 the function fits a quadratic surface
+
+       z = a + b*x + c*x^2 + d*y + e*x*y + f*y^2
+
+    """
+    import numpy as np
+    if weights is None:
+        if sigz is None:
+            sw = 1.
+        else:
+            sw = 1./sigz
+    else:
+        sw = np.sqrt(weights)
+
+    npol = int((degree+1)*(degree+2)/2)
+    a = np.empty((x.size, npol))
+    c = np.empty_like(a)
+    c_test=np.empty(npol)
+    k = 0
+    for i in range(degree+1):
+        for j in range(degree-i+1):
+            c[:, k] = x**j * y**i
+            c_test[ k] = x_test**j * y_test**i
+            a[:, k] = c[:, k]*sw
+            k += 1
+
+    coeff = np.linalg.lstsq(a, z*sw, rcond=None)[0]
+
+    return coeff,c_test
+def loess_2d_test_point(x1, y1, z,x_test,y_test,z_test, frac=0.5, degree=1, rescale=False,
+             npoints=None, sigz=None):
+
+    """
+    zout, wout = loess_2d(x, y, z, frac=0.5, degree=1)
+    gives a LOESS smoothed estimate of the quantity z at the sets
+    of coordinates (x,y).
+
+    """
+    from loess.loess_2d import biweight_sigma,biweight_mean,rotate_points,polyfit_2d
+    import numpy as np
+
+    x1=np.append(x_test,x1)
+    y1=np.append(y_test,y1)
+    z=np.append(z_test,z)
+    if frac == 0:
+        return z, np.ones_like(z)
+
+    assert x1.size == y1.size == z.size, 'Input vectors (X, Y, Z) must have the same size'
+
+    if npoints is None:
+        npoints = int(np.ceil(frac*x1.size))
+
+    if rescale:
+
+        # Robust calculation of the axis of maximum variance
+        #
+        nsteps = 180
+        angles = np.arange(nsteps)
+        sig = np.zeros(nsteps)
+        for j, ang in enumerate(angles):
+            x2, y2 = rotate_points(x1, y1, ang)
+            sig[j] = biweight_sigma(x2)
+        k = np.argmax(sig) # Find index of max value
+        x2, y2 = rotate_points(x1, y1, angles[k])
+        x = (x2 - biweight_mean(x2)) / biweight_sigma(x2)
+        y = (y2 - biweight_mean(y2)) / biweight_sigma(y2)
+
+    else:
+
+        x = x1
+        y = y1
+
+    zout = np.empty_like(x)
+    wout = np.empty_like(x)
+
+    #for j, (xj, yj) in enumerate(zip(x, y)):
+    xj=x[0]
+    yj=y[0]
+    dist = np.sqrt((x - xj)**2 + (y - yj)**2)
+    dist[0]=1e20 # in order to exclude the test point label from the smoothing process
+    w = np.argsort(dist)[:npoints]
+    distWeights = (1 - (dist[w]/dist[w[-1]])**3)**3  # tricube function distance weights
+    zfit = polyfit_2d(x[w], y[w], z[w], degree, weights=distWeights)
+
+    # Robust fit from Sec.2 of Cleveland (1979)
+    # Use errors if those are known.
+    #
+    bad = []
+    for p in range(10):  # do at most 10 iterations
+
+        if sigz is None:  # Errors are unknown
+            aerr = np.abs(zfit - z[w])  # Note ABS()
+            mad = np.median(aerr)  # Characteristic scale
+            uu = (aerr/(6*mad))**2  # For a Gaussian: sigma=1.4826*MAD
+        else:  # Errors are assumed known
+            uu = ((zfit - z[w])/(4*sigz[w]))**2  # 4*sig ~ 6*mad
+
+        uu = uu.clip(0, 1)
+        biWeights = (1 - uu)**2
+        totWeights = distWeights*biWeights
+        zfit = polyfit_2d(x[w], y[w], z[w], degree, weights=totWeights)
+        badOld = bad
+        bad = np.where(biWeights < 0.34)[0] # 99% confidence outliers
+        if np.array_equal(badOld, bad):
+            break
+    coeff,c_test = polyfit_2d_coeff(x[w], y[w], z[w],x_test,y_test, degree, weights=totWeights)
+
+    zout = c_test.dot(coeff)# zfit[0]
+    wout = biWeights[0]
+
+    return zout, wout
