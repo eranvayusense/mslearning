@@ -720,8 +720,8 @@ featureNames.append('Time')#append time to feature names for further analysis
 if preprocessingTechnique == 'Standardize (Robust scalar)':
     FeatureTrainProcessed = RobustScaler().fit_transform(featuresTrainAvgDF)
     FeatureTestProcessed = RobustScaler().fit_transform(featuresTestAvgDF)
-    resultsTrainProcessed = RobustScaler().fit_transform(resultsTrainDeltaDF)
-    resultsTestProcessed = RobustScaler().fit_transform(resultsTestDeltaDF)
+    resultsTrainProcessed = (resultsTrainDeltaDF)
+    resultsTestProcessed = (resultsTestDeltaDF)
     FeatureTrainProcessed = pd.DataFrame(FeatureTrainProcessed, columns=featureNames)
     FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
     resultsTrainProcessed = pd.DataFrame(resultsTrainProcessed, columns=['Titter', 'Impurity'])
@@ -734,8 +734,8 @@ elif preprocessingTechnique == 'No preprocessing':
 elif preprocessingTechnique == 'scaling (0-1)':
     FeatureTrainProcessed = MinMaxScaler().fit_transform(featuresTrainAvgDF)
     FeatureTestProcessed = MinMaxScaler().fit_transform(featuresTestAvgDF)
-    resultsTrainProcessed = MinMaxScaler().fit_transform(resultsTrainDeltaDF)
-    resultsTestProcessed = MinMaxScaler().fit_transform(resultsTestDeltaDF)
+    resultsTrainProcessed = (resultsTrainDeltaDF)
+    resultsTestProcessed = (resultsTestDeltaDF)
     FeatureTrainProcessed = pd.DataFrame(FeatureTrainProcessed, columns=featureNames)
     FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
     resultsTrainProcessed = pd.DataFrame(resultsTrainProcessed, columns=['Titter', 'Impurity'])
@@ -751,6 +751,18 @@ trainTimes = resultsTrainProcessed.index.values #times of all measurements in nu
 firstVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[0]].to_numpy()
 secondVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[1]].to_numpy()
 # zout, wout = loess_2d(firstVarNP, secondVarNP, titterTrainNP, frac=0.2, degree=1, rescale=True)
+# test
+firstVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()
+secondVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[1]].to_numpy()
+titterTestNP = resultsTestProcessed['Titter'].to_numpy()
+z_smoot_test=np.empty(firstVarTestNP.size)
+for i11 in range(len(firstVarTestNP)):
+    zout1, wout = loess_2d_test_point(firstVarNP, secondVarNP, titterTrainNP,firstVarTestNP[i11],
+                                      secondVarTestNP[i11],titterTestNP[i11], frac=0.2, degree=2, rescale=False)
+    z_smoot_test[i11]=zout1
+err_v=(z_smoot_test-titterTestNP)/titterTestNP
+plt.figure();plt.plot(np.arange(z_smoot_test.size),err_v,'ro')
+plt.title(np.std(err_v))
 plt.figure()
 plt.clf()
 if fractionMaxVal-fractionMinVal < 0.4:
