@@ -675,9 +675,9 @@ elif methodType == "LOESS":
     button.place(rely=0.95, relx=0.5, anchor=CENTER)
     loess.mainloop()
 
-if degreeVal == 'First degree':
+if degreeVal == ['First degree']:
     deg = 1
-elif degreeVal == 'Second degree':
+elif degreeVal == ['Second degree']:
     deg = 2
 
 # fractionMinVal = float(FracMinValEntry.get())
@@ -725,6 +725,7 @@ for meas in range(len(testTimes)-1):
 featuresTestAvgDF = featuresTestAvgDF.reindex(featuresTestDF.columns, axis=1)
 resultsTestDeltaDF = resultsTestDeltaDF.reindex(resultsTestDF.columns, axis=1)
 featuresTestAvgDF['Time'] = featuresTestAvgDF.index
+ind_new_exp=np.diff(featuresTestAvgDF['Time'].to_numpy())
 
 featureNames.append('Time')#append time to feature names for further analysis
 numMeasTrain = featuresTrainAvgDF.shape[0]
@@ -776,6 +777,15 @@ for i11 in range(len(firstVarTestNP)):
                                       secondVarTestNP[i11],titterTestNP[i11], frac=fractionMinVal, degree=deg, rescale=False)
     z_smoot_test[i11]=zout1
 err_v=(z_smoot_test-titterTestNP)/titterTestNP
+k_s=0
+for z1 in range(len(ind_new_exp)-1):
+    if ind_new_exp[z1]<=0:
+        plt.figure();plt.plot(np.arange(z_smoot_test[k_s:z1+1].size),err_v[k_s:z1+1],'ro')
+        plt.title(list(['std=',np.std(err_v[k_s:z1+1])]))
+        k_s=z1+1
+
+
+
 plt.figure();plt.plot(np.arange(z_smoot_test.size),err_v,'ro')
 plt.title(np.std(err_v))
 plt.figure()
