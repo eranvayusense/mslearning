@@ -388,19 +388,25 @@ elif methodType == "K-means":
     # del data, offlineData, interpWantedData
     featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, trainData)
     featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, testData)
+
+    numMeasTrain = featuresTrainDF.shape[0]
+    allFeatAvgDF = featuresTrainDF.append(featuresTestDF)
     if preprocessingTechnique == 'Standardize (Robust scalar)':
-        FeatureTrainProcessed = RobustScaler().fit_transform(featuresTrainDF)
-        FeatureTestProcessed = RobustScaler().fit_transform(featuresTestDF)
-        FeatureTrainProcessed = pd.DataFrame(FeatureTrainProcessed, columns=featureNames)
-        FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
+        FeaturesProcessed = RobustScaler().fit_transform(allFeatAvgDF)
+        # FeatureTestProcessed = RobustScaler().fit_transform(featuresTestDF)
+        FeaturesProcessed = pd.DataFrame(FeaturesProcessed, columns=featureNames)
+        # FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
     elif preprocessingTechnique == 'No preprocessing':
-        FeatureTrainProcessed = featuresTrainDF
-        FeatureTestProcessed = featuresTestDF
+        FeaturesProcessed = featuresTrainDF
+        # FeatureTestProcessed = featuresTestDF
     elif preprocessingTechnique == 'scaling (0-1)':
-        FeatureTrainProcessed = MinMaxScaler().fit_transform(featuresTrainDF)
-        FeatureTestProcessed = MinMaxScaler().fit_transform(featuresTestDF)
-        FeatureTrainProcessed = pd.DataFrame(FeatureTrainProcessed, columns=featureNames)
-        FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
+        FeaturesProcessed = MinMaxScaler().fit_transform(allFeatAvgDF)
+        # FeatureTestProcessed = MinMaxScaler().fit_transform(featuresTestDF)
+        FeaturesProcessed = pd.DataFrame(FeaturesProcessed, columns=featureNames)
+        # FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
+
+    FeatureTrainProcessed = FeaturesProcessed.iloc[0:numMeasTrain]
+    FeatureTestProcessed = FeaturesProcessed.iloc[numMeasTrain:]
     k = KMeans(n_clusters=nMeans)
     k.fit(FeatureTrainProcessed)
     predicted_classification = k.predict(FeatureTestProcessed)
@@ -669,6 +675,11 @@ elif methodType == "LOESS":
     button.place(rely=0.95, relx=0.5, anchor=CENTER)
     loess.mainloop()
 
+if degreeVal == 'First degree':
+    deg = 1
+elif degreeVal == 'Second degree':
+    deg = 2
+
 # fractionMinVal = float(FracMinValEntry.get())
 # fractionMaxVal = float(FracMaxValEntry.get())
 
@@ -716,30 +727,34 @@ resultsTestDeltaDF = resultsTestDeltaDF.reindex(resultsTestDF.columns, axis=1)
 featuresTestAvgDF['Time'] = featuresTestAvgDF.index
 
 featureNames.append('Time')#append time to feature names for further analysis
-
+numMeasTrain = featuresTrainAvgDF.shape[0]
+allFeatAvgDF = featuresTrainAvgDF.append(featuresTestAvgDF)
 if preprocessingTechnique == 'Standardize (Robust scalar)':
-    FeatureTrainProcessed = RobustScaler().fit_transform(featuresTrainAvgDF)
-    FeatureTestProcessed = RobustScaler().fit_transform(featuresTestAvgDF)
+    FeaturesProcessed = RobustScaler().fit_transform(allFeatAvgDF)
+    # FeatureTestProcessed = RobustScaler().fit_transform(featuresTestAvgDF)
     resultsTrainProcessed = (resultsTrainDeltaDF)
     resultsTestProcessed = (resultsTestDeltaDF)
-    FeatureTrainProcessed = pd.DataFrame(FeatureTrainProcessed, columns=featureNames)
-    FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
+    FeaturesProcessed = pd.DataFrame(FeaturesProcessed, columns=featureNames)
+    # FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
     resultsTrainProcessed = pd.DataFrame(resultsTrainProcessed, columns=['Titter', 'Impurity'])
     resultsTestProcessed = pd.DataFrame(resultsTestProcessed, columns=['Titter', 'Impurity'])
 elif preprocessingTechnique == 'No preprocessing':
-    FeatureTrainProcessed = featuresTrainAvgDF
-    FeatureTestProcessed = featuresTestAvgDF
+    FeaturesProcessed = allFeatAvgDF
+    # FeatureTestProcessed = featuresTestAvgDF
     resultsTrainProcessed = resultsTrainDeltaDF
     resultsTestProcessed = resultsTestDeltaDF
 elif preprocessingTechnique == 'scaling (0-1)':
-    FeatureTrainProcessed = MinMaxScaler().fit_transform(featuresTrainAvgDF)
-    FeatureTestProcessed = MinMaxScaler().fit_transform(featuresTestAvgDF)
+    FeaturesProcessed = MinMaxScaler().fit_transform(allFeatAvgDF)
+    # FeatureTestProcessed = MinMaxScaler().fit_transform(featuresTestAvgDF)
     resultsTrainProcessed = (resultsTrainDeltaDF)
     resultsTestProcessed = (resultsTestDeltaDF)
-    FeatureTrainProcessed = pd.DataFrame(FeatureTrainProcessed, columns=featureNames)
-    FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
+    FeaturesProcessed = pd.DataFrame(FeaturesProcessed, columns=featureNames)
+    # FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
     resultsTrainProcessed = pd.DataFrame(resultsTrainProcessed, columns=['Titter', 'Impurity'])
     resultsTestProcessed = pd.DataFrame(resultsTestProcessed, columns=['Titter', 'Impurity'])
+
+FeatureTrainProcessed = FeaturesProcessed.iloc[0:numMeasTrain]
+FeatureTestProcessed = FeaturesProcessed.iloc[numMeasTrain:]
 featuresTrainNP = FeatureTrainProcessed.to_numpy()
 titterTrainNP = resultsTrainProcessed['Titter'].to_numpy()
 featuresTestNP = FeatureTestProcessed.to_numpy()
@@ -757,8 +772,8 @@ secondVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[1]].to_numpy()
 titterTestNP = resultsTestProcessed['Titter'].to_numpy()
 z_smoot_test=np.empty(firstVarTestNP.size)
 for i11 in range(len(firstVarTestNP)):
-    zout1, wout = loess_2d_test_point(firstVarNP, secondVarNP, titterTrainNP,firstVarTestNP[i11],
-                                      secondVarTestNP[i11],titterTestNP[i11], frac=0.2, degree=2, rescale=False)
+    zout1, wout = loess_2d_test_point(firstVarNP, secondVarNP, titterTrainNP, firstVarTestNP[i11],
+                                      secondVarTestNP[i11],titterTestNP[i11], frac=fractionMinVal, degree=deg, rescale=False)
     z_smoot_test[i11]=zout1
 err_v=(z_smoot_test-titterTestNP)/titterTestNP
 plt.figure();plt.plot(np.arange(z_smoot_test.size),err_v,'ro')
