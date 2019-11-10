@@ -424,37 +424,37 @@ def feature_extractor_multiple_meas(selectedTypesOfFeatures, interpWantedData):
     for exp in relExp:
         expDF = pd.DataFrame()
         for feature in selectedTypesOfFeatures:
-            if feature == 'Mean dO [40-end]':
+            if feature == 'meanDO':
                 featName = 'meanDO'
                 if featName not in featureNames:
                     featureNames.append(featName)
                 expDF[featName] = interpWantedData[exp]['DO'][40:]
-            elif feature == 'Mean Ammonia [40-end]':
+            elif feature == 'meanAmm':
                 featName = 'meanAmm'
                 if featName not in featureNames:
                     featureNames.append(featName)
                 expDF[featName] = interpWantedData[exp]['Ammonia[percent]'][40:]
-            elif feature == 'Mean Dextrose [40-end]':
+            elif feature == 'meanS':
                 featName = 'meanS'
                 if featName not in featureNames:
                     featureNames.append(featName)
                 expDF[featName] = interpWantedData[exp]['Dextrose[percent]'][40:]
-            elif feature == 'Mean pH [40-end]':
+            elif feature == 'meanpH':
                 featName = 'meanpH'
                 if featName not in featureNames:
                     featureNames.append(featName)
                 expDF[featName] = interpWantedData[exp]['pH_x'][40:]
-            elif feature == 'Mean Agitation [40-end]':
+            elif feature == 'meanAgi':
                 featName = 'meanAgi'
                 if featName not in featureNames:
                     featureNames.append(featName)
                 expDF[featName] = interpWantedData[exp]['Agitation'][40:]
-            elif feature == 'Sum Ammonia feeding [40-end]':
+            elif feature == 'meanAmmFeed':
                 featName = 'meanAmmFeed'
                 if featName not in featureNames:
                     featureNames.append(featName)
                 expDF[featName] = interpWantedData[exp]['Fa'][40:]
-            elif feature == 'Time dextrose low':
+            elif feature == 'TimeDexLow':
                 featName = 'TimeDexLow'
                 if featName not in featureNames:
                     featureNames.append(featName)

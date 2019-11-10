@@ -13,7 +13,6 @@ from sklearn.preprocessing import RobustScaler
 from loess.loess_2d import loess_2d
 from loess.examples import test_loess_1d
 from plotbin.plot_velfield import plot_velfield
-
 # from PIL import ImageTk, Image
 import os
 
@@ -73,9 +72,9 @@ titleLabel.grid(row=0, column=1, sticky=E, pady=20)
 methodLabel = Label(master, text='Method type:', font=('Helvetica', '10', 'bold'))
 methodLabel.grid(row=1, column=1, sticky=E, pady=10, padx=10)
 methodType = StringVar(master)
-methodType.set("Function Search") # default value
+methodType.set("LOESS") # default value
 
-methodDropDown = OptionMenu(master, methodType, "K-means", "Function Search", "Correlations")
+methodDropDown = OptionMenu(master, methodType, "K-means", "Function Search", "Correlations", "LOESS")
 methodDropDown.grid(row=1, column=2, sticky=E, pady=10)
 
 
@@ -102,12 +101,12 @@ for item in experimentsOptions:
 # relExp = expListbox.get(idex)
 expListbox.bind('<ButtonRelease-1>', get_list)
 
-isAllExp = IntVar()
+isAllExp = IntVar(value=1)
 Checkbutton(master, text="All experiments", variable=isAllExp).grid(row=3, column=4, sticky=W, padx=10)
 is2019Exp = IntVar()
 # check2019 = StringVar()
 Checkbutton(master, text="2019 experiments", variable=is2019Exp).grid(row=3, column=5, sticky=W, padx=10)
-isIncyteExp = IntVar(value=1)
+isIncyteExp = IntVar()
 Checkbutton(master, text="Incyte experiments", variable=isIncyteExp).grid(row=3, column=6, sticky=W, padx=10)
 
 preProcessingText = Label(master, text='choose preprocessing technique:', font=('Helvetica', '10', 'bold'))
@@ -126,7 +125,7 @@ for item in preprocessingOptions:
 button = Button(text="continue", command=passForword, width=20, height=1, font=('Helvetica', '17'))
 button.place(rely=0.95, relx=0.5, anchor=CENTER)
 
-mainloop()
+master.mainloop()
 
 #get GUI data
 methodType = methodType.get()
@@ -140,7 +139,6 @@ elif isIncyteExp.get():
     selectedExp = incyteExp
 else:
     selectedExp = selectedExperiments
-
 
 
 
@@ -317,9 +315,10 @@ elif methodType == "K-means":
 
     from sklearn.cluster import KMeans
     selectedTypesOfFeatures = []
-    typesOfFeatures=['Mean dO [40-end]', 'Mean Ammonia [40-end]', 'Mean Dextrose [40-end]', 'Mean pH [40-end]',
-                     'Mean Agitation [40-end]', 'Sum Ammonia feeding [40-end]', 'Time dextrose low'
-                     'Peak dO level']
+    # typesOfFeatures=['Mean dO [40-end]', 'Mean Ammonia [40-end]', 'Mean Dextrose [40-end]', 'Mean pH [40-end]',
+    #                  'Mean Agitation [40-end]', 'Sum Ammonia feeding [40-end]', 'TimeDexLow'
+    #                  'Peak dO level']
+    typesOfFeatures = ['meanDO', 'meanAmm', 'meanS', 'meanpH', 'meanAgi', 'meanAmmFeed', 'TimeDexLow']
     K_means = Tk()
     C = Canvas(K_means, bg="blue", height=250, width=300)
     # filename = PhotoImage(file="C:\\Users\\admin\PycharmProjects\\tobra_model\\statistics_pic1_with_logo.png")
@@ -572,12 +571,116 @@ elif methodType == "Correlations":
 
 
 
+elif methodType == "LOESS":
+
+    def get_list_features(event):
+        """
+        function to read the listbox selection
+        and put the result in an entry widget
+        """
+        global selectedTypesOfFeatures
+        index = FeaturesListbox.curselection()
+        # get the line's text
+        selText = []
+        for i in range(0, len(index)):
+            selText.append(FeaturesListbox.get(index[i]))
+        selectedTypesOfFeatures = selText
+
+
+
+    def get_list_degree(event):
+        """
+        function to read the listbox selection
+        and put the result in an entry widget
+        """
+        global degreeVal
+        index = degreeListbox.curselection()
+        # get the line's text
+        selText = []
+        for i in range(0, len(index)):
+            selText.append(degreeListbox.get(index[i]))
+        degreeVal = selText
+
+    def passForword():
+        global fractionMinVal, fractionMaxVal
+        # numIter.append(numIterEntry.get())
+        fractionMinVal = float(FracMinValEntry.get())
+        fractionMaxVal = float(FracMaxValEntry.get())
+        loess.destroy()
+
+
+
+    selectedTypesOfFeatures = []
+    # typesOfFeatures = ['Mean dO [40-end]', 'Mean Ammonia [40-end]', 'Mean Dextrose [40-end]', 'Mean pH [40-end]',
+    #                    'Mean Agitation [40-end]', 'Sum Ammonia feeding [40-end]', 'TimeDexLow'
+    #                                                                               'Peak dO level']
+    typesOfFeatures = ['meanDO', 'meanAmm', 'meanS', 'meanpH', 'meanAgi', 'meanAmmFeed', 'TimeDexLow']
+    typesOfDegree = ['First degree', 'Second degree']
+    loess = Tk()
+    # C = Canvas(loess, bg="blue", height=250, width=300)
+    # # filename = PhotoImage(file="C:\\Users\\admin\PycharmProjects\\tobra_model\\statistics_pic1_with_logo.png")
+    # filename = PhotoImage(file="statistics_pic1_with_logo.png")
+    # background_label = Label(loess, image=filename)
+    # background_label.place(x=0, y=0, relwidth=1, relheight=1)
+    loess.geometry('900x500')
+    titleLabel = Label(loess, text='LOESS algorithm', font=('Helvetica', '17', 'bold'), fg='blue')
+    titleLabel.grid(row=0, column=1, sticky=E, pady=20)
+    #Text for features
+    FeaturesText = Label(loess, text='Features:', font=('Helvetica', '10', 'bold'))
+    FeaturesText.grid(row=1, column=1, sticky=E, pady=10, padx=20)
+    #Listbox with selection options for wanted features
+    FeaturesListbox = Listbox(loess, selectmode='multiple')
+    FeaturesListbox.grid(row=1, column=2, pady=10)
+    for item in typesOfFeatures:
+        FeaturesListbox.insert(END, item)
+    # idex = expListbox.curselection()
+    # relExp = expListbox.get(idex)
+    FeaturesListbox.bind('<ButtonRelease-1>', get_list_features)
+
+    degreeText = Label(loess, text='Polynom degree:', font=('Helvetica', '10', 'bold'))
+    degreeText.grid(row=2, column=1, sticky=E, pady=10, padx=20)
+    # Listbox with selection options for wanted features
+    degreeListbox = Listbox(loess, selectmode=SINGLE, exportselection=0, height=2)
+    degreeListbox.grid(row=2, column=2, pady=10)
+    for item in typesOfDegree:
+        degreeListbox.insert(END, item)
+    # idex = expListbox.curselection()
+    # relExp = expListbox.get(idex)
+    degreeListbox.bind('<ButtonRelease-1>', get_list_degree)
+
+
+    fracMinText = Label(loess, text='Minimal fraction for group:', font=('Helvetica', '10', 'bold'))
+    fracMinText.grid(row=3, column=1, sticky=E, pady=10, padx=20)
+    FracMinValEntry = Entry(loess)
+    FracMinValEntry.grid(row=3, column=2, pady=10)
+    FracMinValEntry.delete(0, END)
+    FracMinValEntry.insert(0, "0.2")
+
+    fracMaxText = Label(loess, text='Maximal fraction for group:', font=('Helvetica', '10', 'bold'))
+    fracMaxText.grid(row=3, column=3, sticky=E, pady=10, padx=20)
+    FracMaxValEntry = Entry(loess)
+    FracMaxValEntry.grid(row=3, column=4, pady=10)
+    FracMaxValEntry.delete(0, END)
+    FracMaxValEntry.insert(0, "0.4")
+
+
+
+    button = Button(text="continue", command=passForword, width=20, height=1, font=('Helvetica', '17'))
+    button.place(rely=0.95, relx=0.5, anchor=CENTER)
+    loess.mainloop()
+
+# fractionMinVal = float(FracMinValEntry.get())
+# fractionMaxVal = float(FracMaxValEntry.get())
+
 # os.system("pause")
 
-selectedTypesOfFeatures = ['Mean dO [40-end]', 'Mean Ammonia [40-end]', 'Mean Dextrose [40-end]', 'Mean pH [40-end]',
-                 'Mean Agitation [40-end]', 'Sum Ammonia feeding [40-end]', 'Time dextrose low'
-                 'Peak dO level']
+# selectedTypesOfFeatures = ['Mean dO [40-end]', 'Mean Ammonia [40-end]', 'Mean Dextrose [40-end]', 'Mean pH [40-end]',
+#                  'Mean Agitation [40-end]', 'Sum Ammonia feeding [40-end]', 'Time dextrose low'
+#                  'Peak dO level']
 # selectedTypesOfFeatures = ['Mean dO [40-end]', 'Mean Ammonia [40-end]']
+Settings, Const, InitCond = simulation_initialization()
+data = load_data_df(1, selectedExp)
+trainData, testData = devide_data(data)
 featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, trainData)
 featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, testData)
 trainTimes = featuresTrainDF.index.values #times of all measurements in numpy format
@@ -644,30 +747,50 @@ trainTimes = resultsTrainProcessed.index.values #times of all measurements in nu
 # sectionDecisionType = "radius"
 # radius = 2 #hours
 # loessModel = skmisc.loess(featuresTrainNP, titterTrainNP)
-selectedVar = ['Time', 'meanS']# The options are: ['meanDO', 'meanAmm','meanS','meanpH','meanAgi','meanAmmFeed', 'Time']
-firstVarNP = FeatureTrainProcessed[selectedVar[0]].to_numpy()
-secondVarNP = FeatureTrainProcessed[selectedVar[1]].to_numpy()
-zout, wout = loess_2d(firstVarNP, secondVarNP, titterTrainNP, frac=0.2, degree=1, rescale=True)
-
+# selectedVar = ['meanS', 'meanAmm']# The options are: ['meanDO', 'meanAmm','meanS','meanpH','meanAgi','meanAmmFeed', 'Time dextrose low' 'Time']
+firstVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[0]].to_numpy()
+secondVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[1]].to_numpy()
+# zout, wout = loess_2d(firstVarNP, secondVarNP, titterTrainNP, frac=0.2, degree=1, rescale=True)
+plt.figure()
 plt.clf()
-plt.subplot(121)
+if fractionMaxVal-fractionMinVal < 0.4:
+    fracOptions = np.arange(fractionMinVal, fractionMaxVal, 0.05)
+else:
+    fracOptions = np.arange(fractionMinVal, fractionMaxVal, 0.1)
+
+plt.subplot(3, 3, 1)
 plot_velfield(firstVarNP, secondVarNP, titterTrainNP)
-plt.xlabel(selectedVar[0])
-plt.ylabel(selectedVar[1])
+plt.xlabel(selectedTypesOfFeatures[0])
+plt.ylabel(selectedTypesOfFeatures[1])
 plt.title("True Function")
 
+for idx in range(len(fracOptions)):
+    zout, wout = loess_2d(firstVarNP, secondVarNP, titterTrainNP, frac=fracOptions[idx], degree=1, rescale=True)
+    plt.subplot(3, 3, idx+2)
+    plot_velfield(firstVarNP, secondVarNP, zout)
+    plt.xlabel(selectedTypesOfFeatures[0])
+    plt.ylabel(selectedTypesOfFeatures[1])
+    plt.title("Fraction="+str(fracOptions[idx]))
+
+plt.show()
 # plt.subplot(132)
 # plot_velfield(x, y, zran)
 # plt.title("With Noise Added")
 # plt.tick_params(labelleft=False)
+plt.subplot(121)
+plot_velfield(firstVarNP, secondVarNP, titterTrainNP)
+plt.xlabel(selectedTypesOfFeatures[0])
+plt.ylabel(selectedTypesOfFeatures[1])
+plt.title("True Function")
 
 plt.subplot(122)
 plot_velfield(firstVarNP, secondVarNP, zout)
 plt.title("LOESS Recovery")
-plt.xlabel(selectedVar[0])
-plt.ylabel(selectedVar[1])
+plt.xlabel(selectedTypesOfFeatures[0])
+plt.ylabel(selectedTypesOfFeatures[1])
 plt.tick_params(labelleft=False)
 plt.show()
+
 plt.figure()
 plot_velfield(featuresTrainNP[:, 1], featuresTrainNP[:, 2], titterTrainNP, 1)
 for sample in range(featuresTestDF.size):
