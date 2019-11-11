@@ -620,7 +620,7 @@ elif methodType == "LOESS":
     # typesOfFeatures = ['Mean dO [40-end]', 'Mean Ammonia [40-end]', 'Mean Dextrose [40-end]', 'Mean pH [40-end]',
     #                    'Mean Agitation [40-end]', 'Sum Ammonia feeding [40-end]', 'TimeDexLow'
     #                                                                               'Peak dO level']
-    typesOfFeatures = ['meanDO', 'meanAmm', 'meanS', 'meanpH', 'meanAgi', 'meanAmmFeed', 'TimeDexLow']
+    typesOfFeatures = ['meanDO', 'meanAmm', 'meanS', 'meanpH', 'meanAgi', 'meanAmmFeed', 'Time', 'TimeDexLow']
     typesOfDegree = ['First degree', 'Second degree']
     loess = Tk()
     # C = Canvas(loess, bg="blue", height=250, width=300)
@@ -780,9 +780,9 @@ err_v=(z_smoot_test-titterTestNP)/titterTestNP
 k_s=0
 for z1 in range(len(ind_new_exp)-1):
     if ind_new_exp[z1]<=0:
-        plt.figure();plt.plot(np.arange(z_smoot_test[k_s:z1+1].size),err_v[k_s:z1+1],'ro')
-        plt.title(list(['std=',np.std(err_v[k_s:z1+1])]))
-        k_s=z1+1
+        plt.figure();plt.plot(np.arange(z_smoot_test[k_s:z1+1].size), err_v[k_s:z1+1], 'ro')
+        plt.title(list(['std=', np.std(err_v[k_s:z1+1])]))
+        k_s= z1+1
 
 
 
