@@ -725,7 +725,8 @@ for meas in range(len(testTimes)-1):
 featuresTestAvgDF = featuresTestAvgDF.reindex(featuresTestDF.columns, axis=1)
 resultsTestDeltaDF = resultsTestDeltaDF.reindex(resultsTestDF.columns, axis=1)
 featuresTestAvgDF['Time'] = featuresTestAvgDF.index
-ind_new_exp=np.diff(featuresTestAvgDF['Time'].to_numpy())
+t1=featuresTestAvgDF['Time'].to_numpy()
+ind_new_exp=np.diff(t1)
 
 featureNames.append('Time')#append time to feature names for further analysis
 numMeasTrain = featuresTrainAvgDF.shape[0]
@@ -780,12 +781,19 @@ err_v=(z_smoot_test-titterTestNP)/titterTestNP
 k_s=0
 for z1 in range(len(ind_new_exp)-1):
     if ind_new_exp[z1]<=0:
-        plt.figure();plt.plot(np.arange(z_smoot_test[k_s:z1+1].size), err_v[k_s:z1+1], 'ro')
-        plt.title(list(['std=', np.std(err_v[k_s:z1+1])]))
+        #f1,ax=plt.figure();
+        fig, ax = plt.subplots()
+        h1,=ax.plot(t1[k_s:z1+1], titterTestNP[k_s:z1+1], 'ro', label='Data'),
+        h2,=ax.plot(t1[k_s:z1+1], z_smoot_test[k_s:z1+1], 'bo', label='predict')
+        #plt.title(list(['std=', np.std(err_v[k_s:z1+1])]))
+       #ax.axis('equal')
+        leg = ax.legend();
+        #plt.xlabel(selectedTypesOfFeatures[0])
+        plt.ylabel('dp/dt')
         k_s= z1+1
 
 
-
+plt.show()
 plt.figure();plt.plot(np.arange(z_smoot_test.size),err_v,'ro')
 plt.title(np.std(err_v))
 plt.figure()
