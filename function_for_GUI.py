@@ -707,7 +707,7 @@ def polyfit_2d_coeff(x, y, z,x_test,y_test, degree, sigz=None, weights=None):
     coeff = np.linalg.lstsq(a, z*sw, rcond=None)[0]
 
     return coeff,c_test
-def polyfit_nd_coeff(x, y, z,x_test,y_test, degree, sigz=None, weights=None):
+def polyfit_nd_coeff(X, z,X_test, degree, sigz=None, weights=None):
     """
     Fit a bivariate polynomial of given DEGREE to a set of points
     (X, Y, Z), assuming errors SIGZ in the Z variable only.
@@ -731,23 +731,23 @@ def polyfit_nd_coeff(x, y, z,x_test,y_test, degree, sigz=None, weights=None):
         sw = np.sqrt(weights)
 
     npol = int((degree+1)*(degree+2)/2)
-    a = np.empty((x.size, npol))
+    a = np.empty((X.shape[0], npol))
     c = np.ones_like(a)
     c_test= np.ones_like(a)
     k = 0
     #X=np.column_stack((x, y));
-    L1=np.array([[0,0],[1,0],[0,1],[1,1]])
+    L1=np.array([[0,0,0,0,0],[1,0,0,0,0],[0,1,0,0,0],[0,0,1,0,0],[0,0,0,1,0],[0,0,0,0,1]])
     re=2**X.shape[1]
     for r1 in range(re-1):# loop on config
         for col in range(X.shape[1]):# loop on vars
             c[:, r1] =c[:, r1]*X[:,col]**L1[r1,col] #x**j * y**i
-            c_test[:, r1] =c_test[:, r1]*X_test[:,col]**L1[r1,col]
+            c_test[0, r1] =c_test[0, r1]*X_test[:,col]**L1[r1,col]
         a[:, r1] = c[:, r1]*sw
 
 
     coeff = np.linalg.lstsq(a, z*sw, rcond=None)[0]
 
-    return coeff,c_test
+    return coeff,c_test[0,:]
 
 def loess_2d_test_point(x1, y1, z,x_test,y_test,z_test, frac=0.5, degree=1, rescale=False,
              npoints=None, sigz=None):
@@ -842,17 +842,17 @@ def loess_nd_test_point(X, z,X_test,z_test, frac=0.5, degree=1, rescale=False,
     """
     from loess.loess_2d import biweight_sigma,biweight_mean,rotate_points,polyfit_2d
     import numpy as np
-
-    x1=np.append(x_test,x1)
-    y1=np.append(y_test,y1)
+    X=np.append(X_test,X, axis=0)
+    #x1=np.append(x_test,x1)
+    #y1=np.append(y_test,y1)
     z=np.append(z_test,z)
     if frac == 0:
         return z, np.ones_like(z)
 
-    assert x1.size == y1.size == z.size, 'Input vectors (X, Y, Z) must have the same size'
+    #assert x1.size == y1.size == z.size, 'Input vectors (X, Y, Z) must have the same size'
 
     if npoints is None:
-        npoints = int(np.ceil(frac*x1.size))
+        npoints = int(np.ceil(frac*X[:,1].size))
 
     if rescale:
 
@@ -861,30 +861,30 @@ def loess_nd_test_point(X, z,X_test,z_test, frac=0.5, degree=1, rescale=False,
         nsteps = 180
         angles = np.arange(nsteps)
         sig = np.zeros(nsteps)
-        for j, ang in enumerate(angles):
-            x2, y2 = rotate_points(x1, y1, ang)
-            sig[j] = biweight_sigma(x2)
+        #for j, ang in enumerate(angles):
+           # x2, y2 = rotate_points(x1, y1, ang)
+           # sig[j] = biweight_sigma(x2)
         k = np.argmax(sig) # Find index of max value
-        x2, y2 = rotate_points(x1, y1, angles[k])
-        x = (x2 - biweight_mean(x2)) / biweight_sigma(x2)
-        y = (y2 - biweight_mean(y2)) / biweight_sigma(y2)
+       # x2, y2 = rotate_points(x1, y1, angles[k])
+       # x = (x2 - biweight_mean(x2)) / biweight_sigma(x2)
+       # y = (y2 - biweight_mean(y2)) / biweight_sigma(y2)
 
     else:
+       demo=1
+       # x = x1
+       # y = y1
 
-        x = x1
-        y = y1
+    zout = np.empty_like(X[:,1].size)
+    wout = np.empty_like(X[:,1].size)
 
-    zout = np.empty_like(x)
-    wout = np.empty_like(x)
-
-    #for j, (xj, yj) in enumerate(zip(x, y)):
-    xj=x[0]
-    yj=y[0]
-    dist = np.sqrt((x - xj)**2 + (y - yj)**2)
+   # for j, (xj, yj) in enumerate(zip(x, y)):
+    xj=X[0,0]
+    yj=X[0,1]
+    dist = np.sqrt((X[:,0] - xj)**2 + (X[:,1]  - yj)**2)
     dist[0]=1e20 # in order to exclude the test point label from the smoothing process
     w = np.argsort(dist)[:npoints]
     distWeights = (1 - (dist[w]/dist[w[-1]])**3)**3  # tricube function distance weights
-    zfit = polyfit_2d(x[w], y[w], z[w], degree, weights=distWeights)
+    zfit = polyfit_nd(X[w,:], z[w], degree, weights=distWeights)
 
     # Robust fit from Sec.2 of Cleveland (1979)
     # Use errors if those are known.
@@ -902,15 +902,56 @@ def loess_nd_test_point(X, z,X_test,z_test, frac=0.5, degree=1, rescale=False,
         uu = uu.clip(0, 1)
         biWeights = (1 - uu)**2
         totWeights = distWeights*biWeights
-        zfit = polyfit_2d(x[w], y[w], z[w], degree, weights=totWeights)
+        zfit =polyfit_nd(X[w,:], z[w], degree, weights=totWeights)
         badOld = bad
         bad = np.where(biWeights < 0.34)[0] # 99% confidence outliers
         if np.array_equal(badOld, bad):
             break
-    coeff,c_test = polyfit_2d_coeff(x[w], y[w], z[w],x_test,y_test, degree, weights=totWeights)
+    coeff,c_test = polyfit_nd_coeff(X[w,:], z[w],X_test, degree, weights=totWeights)
 
     zout = c_test.dot(coeff)# zfit[0]
     wout = biWeights[0]
 
     return zout, wout
+def polyfit_nd(X, z, degree, sigz=None, weights=None):
+    """
+    Fit a bivariate polynomial of given DEGREE to a set of points
+    (X, Y, Z), assuming errors SIGZ in the Z variable only.
 
+    For example with DEGREE=1 this function fits a plane
+
+       z = a + b*x + c*y
+
+    while with DEGREE=2 the function fits a quadratic surface
+
+       z = a + b*x + c*x^2 + d*y + e*x*y + f*y^2
+
+    """
+    import numpy as np
+    if weights is None:
+        if sigz is None:
+            sw = 1.
+        else:
+            sw = 1./sigz
+    else:
+        sw = np.sqrt(weights)
+
+    npol = int((degree+1)*(degree+2)/2)
+
+    a = np.empty((X.shape[0], npol))
+    c = np.ones_like(a)
+    c_test= np.ones_like(a)
+    k = 0
+    #X=np.column_stack((x, y));
+    L1=np.array([[0,0,0,0,0],[1,0,0,0,0],[0,1,0,0,0],[0,0,1,0,0],[0,0,0,1,0],[0,0,0,0,1]])
+    re=2**X.shape[1]
+    for r1 in range(re-1):# loop on config
+        for col in range(X.shape[1]):# loop on vars
+            c[:, r1] =c[:, r1]*X[:,col]**L1[r1,col] #x**j * y**i
+           # c_test[:, r1] =c_test[:, r1]*X_test[:,col]**L1[r1,col]
+        a[:, r1] = c[:, r1]*sw
+
+
+    coeff = np.linalg.lstsq(a, z*sw, rcond=None)[0]
+
+    return c.dot(coeff)

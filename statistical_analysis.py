@@ -773,10 +773,17 @@ firstVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()
 secondVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[1]].to_numpy()
 titterTestNP = resultsTestProcessed['Titter'].to_numpy()
 z_smoot_test=np.empty(firstVarTestNP.size)
+# nd
+X=np.column_stack((firstVarNP, secondVarNP))
+
 for i11 in range(len(firstVarTestNP)):
-    zout1, wout = loess_2d_test_point(firstVarNP, secondVarNP, titterTrainNP, firstVarTestNP[i11],
-                                      secondVarTestNP[i11],titterTestNP[i11], frac=fractionMinVal, degree=deg, rescale=False)
+    X_test=np.column_stack((firstVarTestNP[i11], secondVarTestNP[i11]))
+    zout1, wout = loess_nd_test_point(X, titterTrainNP,X_test ,titterTestNP[i11], frac=fractionMinVal, degree=deg, rescale=False)
     z_smoot_test[i11]=zout1
+#for i11 in range(len(firstVarTestNP)):
+  #  zout1, wout = loess_2d_test_point(firstVarNP, secondVarNP, titterTrainNP, firstVarTestNP[i11],
+ #                                     secondVarTestNP[i11],titterTestNP[i11], frac=fractionMinVal, degree=deg, rescale=False)
+ #   z_smoot_test[i11]=zout1
 err_v=(z_smoot_test-titterTestNP)/titterTestNP
 k_s=0
 for z1 in range(len(ind_new_exp)-1):
@@ -785,7 +792,7 @@ for z1 in range(len(ind_new_exp)-1):
         fig, ax = plt.subplots()
         h1,=ax.plot(t1[k_s:z1+1], titterTestNP[k_s:z1+1], 'ro', label='Data'),
         h2,=ax.plot(t1[k_s:z1+1], z_smoot_test[k_s:z1+1], 'bo', label='predict')
-        #plt.title(list(['std=', np.std(err_v[k_s:z1+1])]))
+        plt.title(list(['std=', featureNames]))
        #ax.axis('equal')
         leg = ax.legend();
         #plt.xlabel(selectedTypesOfFeatures[0])
