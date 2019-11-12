@@ -99,7 +99,8 @@ for item in experimentsOptions:
     expListbox.insert(END, item)
 # idex = expListbox.curselection()
 # relExp = expListbox.get(idex)
-expListbox.bind('<ButtonRelease-1>', get_list)
+
+# expListbox.bind('<ButtonRelease-1>', get_list)
 
 isAllExp = IntVar(value=1)
 Checkbutton(master, text="All experiments", variable=isAllExp).grid(row=3, column=4, sticky=W, padx=10)
@@ -112,7 +113,8 @@ Checkbutton(master, text="Incyte experiments", variable=isIncyteExp).grid(row=3,
 preProcessingText = Label(master, text='choose preprocessing technique:', font=('Helvetica', '10', 'bold'))
 preProcessingText.grid(row=4, column=1, sticky=E, padx=10, pady=10)
 preProcessingListbox = Listbox(master, height=3, width=25, selectmode=SINGLE)
-preProcessingListbox.select_set(2)
+# preProcessingListbox.select_set(2)
+
 preProcessingListbox.event_generate("<<ListboxSelect>>")
 preProcessingListbox.grid(row=4, column=2, pady=10)
 
@@ -121,6 +123,7 @@ for item in preprocessingOptions:
 # idex = expListbox.curselection()
 # relExp = expListbox.get(idex)
 # expListbox.bind('<ButtonRelease-1>', get_list)
+preProcessingListbox.selection_set(1)
 
 button = Button(text="continue", command=passForword, width=20, height=1, font=('Helvetica', '17'))
 button.place(rely=0.95, relx=0.5, anchor=CENTER)
@@ -608,8 +611,20 @@ elif methodType == "LOESS":
         degreeVal = selText
 
     def passForword():
-        global fractionMinVal, fractionMaxVal
-        # numIter.append(numIterEntry.get())
+        global selectedTypesOfFeatures, degreeVal, fractionMinVal, fractionMaxVal
+        indexFeatures = FeaturesListbox.curselection()
+        # get the line's text
+        selText = []
+        for i in range(0, len(indexFeatures)):
+            selText.append(FeaturesListbox.get(indexFeatures[i]))
+        selectedTypesOfFeatures = selText
+
+        indexDegree = degreeListbox.curselection()
+        # get the line's text
+        selText = []
+        for i in range(0, len(indexDegree)):
+            selText.append(degreeListbox.get(indexDegree[i]))
+        degreeVal = selText
         fractionMinVal = float(FracMinValEntry.get())
         fractionMaxVal = float(FracMaxValEntry.get())
         loess.destroy()
@@ -641,7 +656,9 @@ elif methodType == "LOESS":
         FeaturesListbox.insert(END, item)
     # idex = expListbox.curselection()
     # relExp = expListbox.get(idex)
-    FeaturesListbox.bind('<ButtonRelease-1>', get_list_features)
+    FeaturesListbox.selection_set(2)
+    FeaturesListbox.selection_set(6)
+    # FeaturesListbox.bind('<ButtonRelease-1>', get_list_features)
 
     degreeText = Label(loess, text='Polynom degree:', font=('Helvetica', '10', 'bold'))
     degreeText.grid(row=2, column=1, sticky=E, pady=10, padx=20)
@@ -652,7 +669,8 @@ elif methodType == "LOESS":
         degreeListbox.insert(END, item)
     # idex = expListbox.curselection()
     # relExp = expListbox.get(idex)
-    degreeListbox.bind('<ButtonRelease-1>', get_list_degree)
+    degreeListbox.selection_set(first=0)
+    # degreeListbox.bind('<ButtonRelease-1>', get_list_degree)
 
 
     fracMinText = Label(loess, text='Minimal fraction for group:', font=('Helvetica', '10', 'bold'))

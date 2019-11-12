@@ -218,6 +218,21 @@ def simulation_initialization():
     return Settings,Const,InitCond
 
 
+def set_initial_conditions(expData, Const):
+    import pandas as pd
+    import numpy as np
+    variablesDF = pd.DataFrame()
+    variablesDF['X'] = 0.15 * np.ones([expData.shape[0]]) #[g/L]
+    variablesDF['P'] = 0 * np.ones([expData.shape[0]]) #[g/L]
+    variablesDF['S'] = expData['S'][0]*10 * np.ones([expData.shape[0]]) #[g/L]
+    variablesDF['DO'] = expData['DO'][0] * (Const['DO_MAX']/100) * np.ones([expData.shape[0]]) #[g/L]
+    variablesDF['A'] = expData['A'][0] * np.ones([expData.shape[0]]) #[g/L]
+    variablesDF['Vl'] = 80 * np.ones([expData.shape[0]]) #[L]
+    variablesDF['Vg'] = 70 * np.ones([expData.shape[0]]) #[L]
+    variablesDF['mu'] = np.zeros([expData.shape[0]])
+    variablesDF['mu_pp'] = np.zeros([expData.shape[0]])
+    return variablesDF
+
 def orginize_const_dict(functionCombos,varTypes,nConfig):
     def rand_vec_generator(type, inputRange, length):
         import numpy as np
