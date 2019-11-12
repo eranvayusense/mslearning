@@ -846,8 +846,10 @@ def loess_2d_test_point(x1, y1, z,x_test,y_test,z_test, frac=0.5, degree=1, resc
     wout = biWeights[0]
 
     return zout, wout
-def loess_nd_test_point(X, z,X_test,z_test, frac=0.5, degree=1, rescale=False,
+def loess_nd_test_point(X, z, X_test, z_test, frac=0.5, degree=1, rescale=False,
              npoints=None, sigz=None):
+    # def loess_nd_test_point(X, XDist, z, X_test, XDist_test, z_test, frac=0.5, degree=1, rescale=False,
+    #                         npoints=None, sigz=None):
 
     """
     zout, wout = loess_2d(x, y, z, frac=0.5, degree=1)
@@ -855,6 +857,8 @@ def loess_nd_test_point(X, z,X_test,z_test, frac=0.5, degree=1, rescale=False,
     of coordinates (x,y).
 
     """
+    XDist = X
+    XDist_test = X_test
     from loess.loess_2d import biweight_sigma,biweight_mean,rotate_points,polyfit_2d
     import numpy as np
     X=np.append(X_test,X, axis=0)
@@ -893,10 +897,15 @@ def loess_nd_test_point(X, z,X_test,z_test, frac=0.5, degree=1, rescale=False,
     wout = np.empty_like(X[:,1].size)
 
    # for j, (xj, yj) in enumerate(zip(x, y)):
-    xj=X[0,0]
-    yj=X[0,1]
-    dist = np.sqrt((X[:,0] - xj)**2 + (X[:,1]  - yj)**2)
-    dist[0]=1e20 # in order to exclude the test point label from the smoothing process
+   #  xj=X[0,0]
+   #  yj=X[0,1]
+    distSumSqr = 0
+    for varForDist in range(XDist_test.size):
+        distVarSqr = (XDist[:, varForDist]- XDist_test[0][varForDist]) ** 2
+        distSumSqr += distVarSqr
+    dist = np.sqrt(distSumSqr)
+    # dist = np.sqrt((X[:,0] - xj)**2 + (X[:,1]  - yj)**2)
+    # dist[0]=1e20 # in order to exclude the test point label from the smoothing process
     w = np.argsort(dist)[:npoints]
     distWeights = (1 - (dist[w]/dist[w[-1]])**3)**3  # tricube function distance weights
     zfit = polyfit_nd(X[w,:], z[w], degree, weights=distWeights)
@@ -951,8 +960,8 @@ def polyfit_nd(X, z, degree, sigz=None, weights=None):
     else:
         sw = np.sqrt(weights)
 
-    npol = int((degree+1)*(degree+2)/2)
-
+    # npol = int((degree+1)*(degree+2)/2)#Number of organs in polynom
+    npol = X.shape[1] + 1
     a = np.empty((X.shape[0], npol))
     c = np.ones_like(a)
     c_test= np.ones_like(a)
@@ -960,7 +969,7 @@ def polyfit_nd(X, z, degree, sigz=None, weights=None):
     #X=np.column_stack((x, y));
     L1=np.array([[0,0,0,0,0],[1,0,0,0,0],[0,1,0,0,0],[0,0,1,0,0],[0,0,0,1,0],[0,0,0,0,1]])
     re=2**X.shape[1]
-    for r1 in range(re-1):# loop on config
+    for r1 in range(npol):# loop on config
         for col in range(X.shape[1]):# loop on vars
             c[:, r1] =c[:, r1]*X[:,col]**L1[r1,col] #x**j * y**i
            # c_test[:, r1] =c_test[:, r1]*X_test[:,col]**L1[r1,col]
