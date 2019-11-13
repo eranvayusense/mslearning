@@ -644,7 +644,7 @@ elif methodType == "LOESS":
     #                    'Mean Agitation [40-end]', 'Sum Ammonia feeding [40-end]', 'TimeDexLow'
     #                                                                               'Peak dO level']
     typesOfFeatures = ['meanDO', 'meanAmm', 'meanS', 'meanpH', 'meanAgi', 'meanAmmFeed', 'Time', 'TimeDexLow']
-    typesOfR_filter = ['meanDO_', 'meanAmm_', 'meanS_', 'meanpH_', 'meanAgi_', 'meanAmmFeed_', 'Time_', 'TimeDexLow_']
+    typesOfR_filter = ['meanDO', 'meanAmm', 'meanS', 'meanpH', 'meanAgi', 'meanAmmFeed', 'Time', 'TimeDexLow']
     typesOfDegree = ['First degree', 'Second degree']
     loess = Tk()
     # C = Canvas(loess, bg="blue", height=250, width=300)
@@ -732,8 +732,13 @@ elif degreeVal == ['Second degree']:
 Settings, Const, InitCond = simulation_initialization()
 data = load_data_df(1, selectedExp)
 trainData, testData = devide_data(data)
-featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, trainData)
-featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, testData)
+#featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, trainData)
+#featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, testData)
+featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(typesOfFeatures, trainData)
+featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(typesOfR_filter, trainData)
+featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(typesOfFeatures, testData)
+featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(typesOfR_filter, testData)
+
 trainTimes = featuresTrainDF.index.values #times of all measurements in numpy format
 testTimes = featuresTestDF.index.values #times of all measurements in numpy format
 featuresTrainAvgDF = pd.DataFrame()
@@ -810,13 +815,18 @@ VartestNP=np.empty((len(FeatureTestProcessed[selectedTypesOfFeatures[0]].to_nump
 for i2 in range(len(selectedTypesOfFeatures)):
     VarNP[:,i2] = FeatureTrainProcessed[selectedTypesOfFeatures[i2]].to_numpy()
     VartestNP[:,i2] = FeatureTestProcessed[selectedTypesOfFeatures[i2]].to_numpy()
+VarfilterNP=np.empty((len(FeatureTrainProcessed[selectedTypesOfR_filter[0]].to_numpy()),len(selectedTypesOfR_filter) ))
+VarfiltertestNP=np.empty((len(FeatureTestProcessed[selectedTypesOfR_filter[0]].to_numpy()),len(selectedTypesOfR_filter) ))
+for i2 in range(len(selectedTypesOfR_filter)):
+    VarfilterNP[:,i2] = FeatureTrainProcessed[selectedTypesOfR_filter[i2]].to_numpy()
+    VarfiltertestNP[:,i2] = FeatureTestProcessed[selectedTypesOfR_filter[i2]].to_numpy()
 
-firstVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[0]].to_numpy()
-secondVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[1]].to_numpy()
+#firstVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[0]].to_numpy()
+#secondVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[1]].to_numpy()
 # zout, wout = loess_2d(firstVarNP, secondVarNP, titterTrainNP, frac=0.2, degree=1, rescale=True)
 # test
-firstVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()
-secondVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[1]].to_numpy()
+#firstVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()
+#secondVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[1]].to_numpy()
 titterTestNP = resultsTestProcessed['Titter'].to_numpy()
 z_smoot_test=np.empty(VartestNP.shape[0])
 # nd
@@ -825,7 +835,8 @@ X=VarNP
 
 for i11 in range(len(z_smoot_test)):
     X_test=VartestNP[i11,:]
-    zout1, wout = loess_nd_test_point(X, titterTrainNP,X_test ,titterTestNP[i11], frac=fractionMinVal, degree=deg, rescale=False)
+    X_filter_test=VarfiltertestNP[i11,:]
+    zout1, wout = loess_nd_test_point(VarNP,VarfilterNP, titterTrainNP,X_test ,X_filter_test,titterTestNP[i11], frac=fractionMinVal, degree=deg, rescale=False)
     z_smoot_test[i11]=zout1
 #for i11 in range(len(firstVarTestNP)):
   #  zout1, wout = loess_2d_test_point(firstVarNP, secondVarNP, titterTrainNP, firstVarTestNP[i11],
