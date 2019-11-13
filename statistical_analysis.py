@@ -611,13 +611,21 @@ elif methodType == "LOESS":
         degreeVal = selText
 
     def passForword():
-        global selectedTypesOfFeatures, degreeVal, fractionMinVal, fractionMaxVal
+        global selectedTypesOfFeatures, selectedTypesOfR_filter,degreeVal, fractionMinVal, fractionMaxVal
         indexFeatures = FeaturesListbox.curselection()
+
         # get the line's text
         selText = []
         for i in range(0, len(indexFeatures)):
             selText.append(FeaturesListbox.get(indexFeatures[i]))
         selectedTypesOfFeatures = selText
+
+        indexR_filter = R_filterListbox.curselection()
+        # get the line's text
+        selText = []
+        for i in range(0, len(indexR_filter)):
+            selText.append(R_filterListbox.get(indexR_filter[i]))
+        selectedTypesOfR_filter  = selText
 
         indexDegree = degreeListbox.curselection()
         # get the line's text
@@ -636,6 +644,7 @@ elif methodType == "LOESS":
     #                    'Mean Agitation [40-end]', 'Sum Ammonia feeding [40-end]', 'TimeDexLow'
     #                                                                               'Peak dO level']
     typesOfFeatures = ['meanDO', 'meanAmm', 'meanS', 'meanpH', 'meanAgi', 'meanAmmFeed', 'Time', 'TimeDexLow']
+    typesOfR_filter = ['meanDO_', 'meanAmm_', 'meanS_', 'meanpH_', 'meanAgi_', 'meanAmmFeed_', 'Time_', 'TimeDexLow_']
     typesOfDegree = ['First degree', 'Second degree']
     loess = Tk()
     # C = Canvas(loess, bg="blue", height=250, width=300)
@@ -659,6 +668,19 @@ elif methodType == "LOESS":
     FeaturesListbox.selection_set(2)
     FeaturesListbox.selection_set(6)
     # FeaturesListbox.bind('<ButtonRelease-1>', get_list_features)
+
+    # text of R_filter
+    R_filterText = Label(loess, text='R_filter:', font=('Helvetica', '10', 'bold'))
+    R_filterText.grid(row=1, column=3, sticky=E, pady=10, padx=20)
+    #Listbox with selection options for wanted features
+    R_filterListbox = Listbox(loess, selectmode='multiple', exportselection=0)
+    R_filterListbox.grid(row=1, column=4, pady=10)
+    for item in typesOfR_filter:
+        R_filterListbox.insert(END, item)
+    # idex = expListbox.curselection()
+    # relExp = expListbox.get(idex)
+    R_filterListbox.selection_set(1)
+
 
     degreeText = Label(loess, text='Polynom degree:', font=('Helvetica', '10', 'bold'))
     degreeText.grid(row=2, column=1, sticky=E, pady=10, padx=20)
@@ -783,6 +805,12 @@ trainTimes = resultsTrainProcessed.index.values #times of all measurements in nu
 # radius = 2 #hours
 # loessModel = skmisc.loess(featuresTrainNP, titterTrainNP)
 # selectedVar = ['meanS', 'meanAmm']# The options are: ['meanDO', 'meanAmm','meanS','meanpH','meanAgi','meanAmmFeed', 'Time dextrose low' 'Time']
+VarNP=np.empty((len(FeatureTrainProcessed[selectedTypesOfFeatures[0]].to_numpy()),len(selectedTypesOfFeatures) ))
+VartestNP=np.empty((len(FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()),len(selectedTypesOfFeatures) ))
+for i2 in range(len(selectedTypesOfFeatures)):
+    VarNP[:,i2] = FeatureTrainProcessed[selectedTypesOfFeatures[i2]].to_numpy()
+    VartestNP[:,i2] = FeatureTestProcessed[selectedTypesOfFeatures[i2]].to_numpy()
+
 firstVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[0]].to_numpy()
 secondVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[1]].to_numpy()
 # zout, wout = loess_2d(firstVarNP, secondVarNP, titterTrainNP, frac=0.2, degree=1, rescale=True)
@@ -790,12 +818,13 @@ secondVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[1]].to_numpy()
 firstVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()
 secondVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[1]].to_numpy()
 titterTestNP = resultsTestProcessed['Titter'].to_numpy()
-z_smoot_test=np.empty(firstVarTestNP.size)
+z_smoot_test=np.empty(VartestNP.shape[0])
 # nd
-X=np.column_stack((firstVarNP, secondVarNP))
+X=VarNP
 
-for i11 in range(len(firstVarTestNP)):
-    X_test=np.column_stack((firstVarTestNP[i11], secondVarTestNP[i11]))
+
+for i11 in range(len(z_smoot_test)):
+    X_test=VartestNP[i11,:]
     zout1, wout = loess_nd_test_point(X, titterTrainNP,X_test ,titterTestNP[i11], frac=fractionMinVal, degree=deg, rescale=False)
     z_smoot_test[i11]=zout1
 #for i11 in range(len(firstVarTestNP)):

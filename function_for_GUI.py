@@ -861,7 +861,7 @@ def loess_nd_test_point(X, z, X_test, z_test, frac=0.5, degree=1, rescale=False,
     XDist_test = X_test
     from loess.loess_2d import biweight_sigma,biweight_mean,rotate_points,polyfit_2d
     import numpy as np
-    X=np.append(X_test,X, axis=0)
+    X=np.vstack([X_test,X])
     #x1=np.append(x_test,x1)
     #y1=np.append(y_test,y1)
     z=np.append(z_test,z)
