@@ -871,7 +871,7 @@ def loess_nd_test_point(X, XDist, z, X_test, XDist_test, z_test, frac=0.5, degre
     #assert x1.size == y1.size == z.size, 'Input vectors (X, Y, Z) must have the same size'
 
     if npoints is None:
-        npoints = int(np.ceil(frac*X[:,1].size))
+        npoints = int(np.ceil(frac*X[:, 0].size))
 
     if rescale:
 
@@ -893,8 +893,8 @@ def loess_nd_test_point(X, XDist, z, X_test, XDist_test, z_test, frac=0.5, degre
        # x = x1
        # y = y1
 
-    zout = np.empty_like(X[:,1].size)
-    wout = np.empty_like(X[:,1].size)
+    # zout = np.empty_like(X[:,1].size)
+    # wout = np.empty_like(X[:,1].size)
 
    # for j, (xj, yj) in enumerate(zip(x, y)):
    #  xj=X[0,0]

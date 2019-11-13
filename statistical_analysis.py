@@ -9,7 +9,7 @@ from itertools import combinations
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import RobustScaler
-#import skmisc.loess
+# import skmisc.loess
 from loess.loess_2d import loess_2d
 from loess.examples import test_loess_1d
 from plotbin.plot_velfield import plot_velfield
@@ -17,6 +17,7 @@ from plotbin.plot_velfield import plot_velfield
 import os
 
 from tkinter import messagebox
+
 # top = Tk()
 # C = Canvas(top, bg="blue", height=250, width=300)
 # filename = PhotoImage(file="C:\\Users\\admin\PycharmProjects\\tobra_model\\statistics_pic1.png")
@@ -25,16 +26,19 @@ from tkinter import messagebox
 # C.pack()
 # top.mainloop
 
-experimentsOptions = ['0119A', '0119B', '0319A', '0319B', '0419A', '0419B', '0519A', '0519B', '0619A', '0619B', '0719A', '0819A',
-               '0819B', '040217', '040117', '330615', '340615', '350615', '370615', '380615', '390615', '400615', '410615',
-              '430615', '450815', '470815', '0019_REF', '0019_IC', '0119_REF', '0119_IC', '0219_REF', '0219_IC']
+experimentsOptions = ['0119A', '0119B', '0319A', '0319B', '0419A', '0419B', '0519A', '0519B', '0619A', '0619B', '0719A',
+                      '0819A',
+                      '0819B', '040217', '040117', '330615', '340615', '350615', '370615', '380615', '390615', '400615',
+                      '410615',
+                      '430615', '450815', '470815', '0019_REF', '0019_IC', '0119_REF', '0119_IC', '0219_REF', '0219_IC']
 incyteExp = ['0419A', '0519A', '0519B', '0619A', '0619B', '0719A', '0819A', '0119_IC', '0219_IC']
 exp2019 = ['0119A', '0119B', '0319A', '0319B', '0419A', '0419B', '0519A', '0519B', '0619A', '0619B', '0719A', '0819A',
-               '0819B', '0019_REF', '0019_IC', '0119_REF', '0119_IC', '0219_REF', '0219_IC']
+           '0819B', '0019_REF', '0019_IC', '0119_REF', '0119_IC', '0219_REF', '0219_IC']
 
 preprocessingOptions = ['No preprocessing', 'scaling (0-1)', 'Standardize (Robust scalar)']
 
 master = Tk()
+
 
 def get_list(event):
     """
@@ -53,12 +57,14 @@ def get_list(event):
     # now display the selected text
     selectedExperiments.append(selText)
 
+
 def passForword():
     global preprocessingTechnique
     preprocessingTechnique = preProcessingListbox.get(preProcessingListbox.curselection())
     # numIter.append(numIterEntry.get())
     master.destroy()
     return preprocessingTechnique
+
 
 C = Canvas(master, bg="blue", height=250, width=300)
 # filename = PhotoImage(file="C:\\Users\\admin\PycharmProjects\\tobra_model\\statistics_pic1_with_logo.png")
@@ -72,15 +78,12 @@ titleLabel.grid(row=0, column=1, sticky=E, pady=20)
 methodLabel = Label(master, text='Method type:', font=('Helvetica', '10', 'bold'))
 methodLabel.grid(row=1, column=1, sticky=E, pady=10, padx=10)
 methodType = StringVar(master)
-methodType.set("LOESS") # default value
+methodType.set("LOESS")  # default value
 
 methodDropDown = OptionMenu(master, methodType, "K-means", "Function Search", "Correlations", "LOESS")
 methodDropDown.grid(row=1, column=2, sticky=E, pady=10)
 
-
-
-
-#load data or use .p file
+# load data or use .p file
 loadDataText = Label(master, text='load excel data?', font=('Helvetica', '10', 'bold'))
 loadDataText.grid(row=2, column=1, sticky=E, pady=20, padx=10)
 isLoadData = IntVar()
@@ -130,7 +133,7 @@ button.place(rely=0.95, relx=0.5, anchor=CENTER)
 
 master.mainloop()
 
-#get GUI data
+# get GUI data
 methodType = methodType.get()
 isLoadData = isLoadData.get()
 
@@ -143,11 +146,10 @@ elif isIncyteExp.get():
 else:
     selectedExp = selectedExperiments
 
-
-
-
 if methodType == "Function Search":
-    typesOfFunctions=['second_degree', 'third_degree', 'michaelis_menten', 'bell_michaelis_menten']
+    typesOfFunctions = ['second_degree', 'third_degree', 'michaelis_menten', 'bell_michaelis_menten']
+
+
     def get_list_func(event):
         """
         function to read the listbox selection
@@ -164,13 +166,14 @@ if methodType == "Function Search":
         # enter1.delete(0, 50)
         # now display the selected text
         selectedTypesOfFunctions.append(selText)
+
+
     def passForword():
         global nConfig
         nConfig = int(numIterEntry.get())
         # numIter.append(numIterEntry.get())
         funcSearch.destroy()
         return nConfig
-
 
 
     funcSearch = Tk()
@@ -198,7 +201,6 @@ if methodType == "Function Search":
     numIterEntry.grid(row=2, column=2, sticky=E, pady=10)
     numIterEntry.insert(0, "1000")
 
-
     funcText = Label(funcSearch, text='Functions to run:', font=('Helvetica', '10', 'bold'))
     funcText.grid(row=3, column=1, sticky=E, pady=10, padx=20)
     funcListbox = Listbox(funcSearch, selectmode='multiple')
@@ -213,7 +215,7 @@ if methodType == "Function Search":
     button.place(rely=0.95, relx=0.5, anchor=CENTER)
     funcSearch.mainloop()
 
-    #get GUI data
+    # get GUI data
     isDex = dexVar.get()
     isDO = DOVar.get()
     isAmm = ammVar.get()
@@ -229,9 +231,9 @@ if methodType == "Function Search":
     Settings, Const, InitCond = simulation_initialization()
     # data = read_rnd_data(selectedExp)
     # interpData=data['0419A'].interpolate(limit_area='inside')
-    #load data from dataframes:
+    # load data from dataframes:
 
-    #load data from dictionaries.
+    # load data from dictionaries.
     # data, offlineData = load_data(isLoadData, selectedExp)
     # interpWantedData = data_interp(data, offlineData, selectedExp, Const)
     if isLoadData:
@@ -257,20 +259,21 @@ if methodType == "Function Search":
             bestScoreFunctions = functionVecName
             bestScoreFunctionVec = functionVec
 
-
     exp = list(trainData.keys())[1]
-    #bestScoreFunctions = 'bbb'
+    # bestScoreFunctions = 'bbb'
     # bestScoreFunctions = 'ttt'
     relExp = list(trainData.keys())
     if 'expNames' in relExp:
         relExp.remove('expNames')
     for exp in relExp:
         plt.figure()
-        devideConst = np.mean(ansDict[bestScoreFunctions][exp]['prod'][ansDict[bestScoreFunctions]['sortedSumScoreMatIdx'][-1]]) / \
-                np.mean(trainData[exp]['Tobramycin'])
+        devideConst = np.mean(
+            ansDict[bestScoreFunctions][exp]['prod'][ansDict[bestScoreFunctions]['sortedSumScoreMatIdx'][-1]]) / \
+                      np.mean(trainData[exp]['Tobramycin'])
 
         plt.plot(np.array(trainData[exp].index),
-                 ansDict[bestScoreFunctions][exp]['prod'][ansDict[bestScoreFunctions]['sortedSumScoreMatIdx'][-1]]/devideConst)
+                 ansDict[bestScoreFunctions][exp]['prod'][
+                     ansDict[bestScoreFunctions]['sortedSumScoreMatIdx'][-1]] / devideConst)
         plt.plot(np.array(trainData[exp].index), trainData[exp]['Tobramycin'])
         plt.legend(['Model', 'Data'])
         plt.xlabel('Time [min]')
@@ -306,6 +309,8 @@ elif methodType == "K-means":
         # now display the selected text
         # selectedTypesOfFeatures.append(selText)
         selectedTypesOfFeatures = selText
+
+
     def passForword():
         global nConfig, nMeans
         nConfig = int(numIterEntry.get())
@@ -315,8 +320,8 @@ elif methodType == "K-means":
         return nConfig
 
 
-
     from sklearn.cluster import KMeans
+
     selectedTypesOfFeatures = []
     # typesOfFeatures=['Mean dO [40-end]', 'Mean Ammonia [40-end]', 'Mean Dextrose [40-end]', 'Mean pH [40-end]',
     #                  'Mean Agitation [40-end]', 'Sum Ammonia feeding [40-end]', 'TimeDexLow'
@@ -365,24 +370,23 @@ elif methodType == "K-means":
     button.place(rely=0.95, relx=0.5, anchor=CENTER)
     K_means.mainloop()
 
-
-    #get GUI data
+    # get GUI data
     isProdRef = ProdRef.get()
     isImpurityRef = ImpurityRef.get()
 
-    #execute Kmeans algorithm
+    # execute Kmeans algorithm
     Settings, Const, InitCond = simulation_initialization()
-    #if isLoadData:
+    # if isLoadData:
     #   data = load_data_df(isLoadData, selectedExp)
     #    interpWantedData = data_interp_df(data, selectedExp)
-    #else:
+    # else:
     #    interpWantedData = load_data_df(isLoadData, selectedExp)
 
     data = load_data_df(1, selectedExp)
     trainData, testData = devide_data(data)
-    #if isLoadData:
+    # if isLoadData:
     #    del data, interpWantedData
-    #else:
+    # else:
     #    del interpWantedData
     del data
     # data, offlineData = load_data(isLoadData, selectedExp)
@@ -418,7 +422,7 @@ elif methodType == "K-means":
     plt.figure()
     plt.scatter(resultsTrainDF['Titter'], resultsTrainDF['Impurity'], c=k.labels_)
     # plt.show()
-    q=2
+    q = 2
 
 elif methodType == "Correlations":
     # def get_list_tests(event):
@@ -481,12 +485,12 @@ elif methodType == "Correlations":
         correlations.destroy()
         return numCorr
 
+
     selectedTypesOfTest = []
     selectedTypesOfVar = []
     typesOfCorrelations = ['Test all', 'Test specific variables']
     typesOfVariables = ['DO', 'S', 'Ammonia', 'CO2', 'Production', 'Incyte', 'pH', 'Ammonia feeding',
                         'Dextrose feeding', 'Airflow', 'Agitation']
-
 
     correlations = Tk()
     C = Canvas(correlations, bg="blue", height=250, width=300)
@@ -521,7 +525,8 @@ elif methodType == "Correlations":
     VariablesText.grid(row=3, column=1, sticky=E, pady=0, padx=20)
     isDisplayMatrix = IntVar(value=1)
     Checkbutton(correlations, text="Matrix display", variable=isDisplayMatrix).grid(row=3, column=2, sticky=W, padx=20)
-    numCorrDisplayText = Label(correlations, text='Number of best correlation to display:', font=('Helvetica', '10', 'bold'))
+    numCorrDisplayText = Label(correlations, text='Number of best correlation to display:',
+                               font=('Helvetica', '10', 'bold'))
     numCorrDisplayText.grid(row=3, column=3, sticky=E, padx=10)
     numCorrDisplayEntry = Entry(correlations, text='all')
     numCorrDisplayEntry.grid(row=3, column=4, sticky=E, pady=10, padx=10)
@@ -542,7 +547,7 @@ elif methodType == "Correlations":
     # data, offlineData = load_data(isLoadData, selectedExp)
     # interpWantedData = data_interp(data, offlineData, selectedExp, Const)
     correlationDataFrame, allexpDataframe = correlation_function_df(selectedTypesOfTest, selectedTypesOfVar,
-                                                                 typesOfVariables, data, preprocessingTechnique)
+                                                                    typesOfVariables, data, preprocessingTechnique)
 
     if isDisplayMatrix:
         fig, ax = plt.subplots()
@@ -572,7 +577,7 @@ elif methodType == "Correlations":
         relScore = absScoreVec[sortedIndexes[-comboIdx]]
         plt.figure()
         plt.scatter(allexpDataframe[relCombo[0]], allexpDataframe[relCombo[1]])
-        plt.title("score #{}: {} as a function of {}".format(round(relScore,2), relCombo[1], relCombo[0]))
+        plt.title("score #{}: {} as a function of {}".format(round(relScore, 2), relCombo[1], relCombo[0]))
         plt.xlabel(relCombo[0])
         plt.ylabel(relCombo[1])
     # plt.show()
@@ -596,7 +601,6 @@ elif methodType == "LOESS":
         selectedTypesOfFeatures = selText
 
 
-
     def get_list_degree(event):
         """
         function to read the listbox selection
@@ -610,8 +614,9 @@ elif methodType == "LOESS":
             selText.append(degreeListbox.get(index[i]))
         degreeVal = selText
 
+
     def passForword():
-        global selectedTypesOfFeatures, selectedTypesOfR_filter,degreeVal, fractionMinVal, fractionMaxVal
+        global selectedTypesOfFeatures, selectedTypesOfR_filter, degreeVal, fractionMinVal, fractionMaxVal
         indexFeatures = FeaturesListbox.curselection()
 
         # get the line's text
@@ -625,7 +630,7 @@ elif methodType == "LOESS":
         selText = []
         for i in range(0, len(indexR_filter)):
             selText.append(R_filterListbox.get(indexR_filter[i]))
-        selectedTypesOfR_filter  = selText
+        selectedTypesOfR_filter = selText
 
         indexDegree = degreeListbox.curselection()
         # get the line's text
@@ -636,7 +641,6 @@ elif methodType == "LOESS":
         fractionMinVal = float(FracMinValEntry.get())
         fractionMaxVal = float(FracMaxValEntry.get())
         loess.destroy()
-
 
 
     selectedTypesOfFeatures = []
@@ -655,10 +659,10 @@ elif methodType == "LOESS":
     loess.geometry('900x500')
     titleLabel = Label(loess, text='LOESS algorithm', font=('Helvetica', '17', 'bold'), fg='blue')
     titleLabel.grid(row=0, column=1, sticky=E, pady=20)
-    #Text for features
+    # Text for features
     FeaturesText = Label(loess, text='Features:', font=('Helvetica', '10', 'bold'))
     FeaturesText.grid(row=1, column=1, sticky=E, pady=10, padx=20)
-    #Listbox with selection options for wanted features
+    # Listbox with selection options for wanted features
     FeaturesListbox = Listbox(loess, selectmode='multiple')
     FeaturesListbox.grid(row=1, column=2, pady=10)
     for item in typesOfFeatures:
@@ -672,7 +676,7 @@ elif methodType == "LOESS":
     # text of R_filter
     R_filterText = Label(loess, text='R_filter:', font=('Helvetica', '10', 'bold'))
     R_filterText.grid(row=1, column=3, sticky=E, pady=10, padx=20)
-    #Listbox with selection options for wanted features
+    # Listbox with selection options for wanted features
     R_filterListbox = Listbox(loess, selectmode='multiple', exportselection=0)
     R_filterListbox.grid(row=1, column=4, pady=10)
     for item in typesOfR_filter:
@@ -680,7 +684,6 @@ elif methodType == "LOESS":
     # idex = expListbox.curselection()
     # relExp = expListbox.get(idex)
     R_filterListbox.selection_set(1)
-
 
     degreeText = Label(loess, text='Polynom degree:', font=('Helvetica', '10', 'bold'))
     degreeText.grid(row=2, column=1, sticky=E, pady=10, padx=20)
@@ -693,7 +696,6 @@ elif methodType == "LOESS":
     # relExp = expListbox.get(idex)
     degreeListbox.selection_set(first=0)
     # degreeListbox.bind('<ButtonRelease-1>', get_list_degree)
-
 
     fracMinText = Label(loess, text='Minimal fraction for group:', font=('Helvetica', '10', 'bold'))
     fracMinText.grid(row=3, column=1, sticky=E, pady=10, padx=20)
@@ -709,16 +711,23 @@ elif methodType == "LOESS":
     FracMaxValEntry.delete(0, END)
     FracMaxValEntry.insert(0, "0.4")
 
-
+    # loadDataText = Label(master, text='load excel data?', font=('Helvetica', '10', 'bold'))
+    # loadDataText.grid(row=4, column=1, sticky=E, pady=20, padx=10)
+    # isLoadData = IntVar()
+    # Checkbutton(master, variable=isLoadData).grid(row=4, column=2, sticky=W, pady=20)
+    isRunCombos = IntVar(value=1)
+    Checkbutton(loess, text="Run all FF combos?", variable=isRunCombos).grid(row=4, column=1, sticky=W, padx=10)
 
     button = Button(text="continue", command=passForword, width=20, height=1, font=('Helvetica', '17'))
     button.place(rely=0.95, relx=0.5, anchor=CENTER)
     loess.mainloop()
 
+# get GUI data
 if degreeVal == ['First degree']:
     deg = 1
 elif degreeVal == ['Second degree']:
     deg = 2
+isRunCombos = isRunCombos.get()
 
 # fractionMinVal = float(FracMinValEntry.get())
 # fractionMaxVal = float(FracMaxValEntry.get())
@@ -732,23 +741,24 @@ elif degreeVal == ['Second degree']:
 Settings, Const, InitCond = simulation_initialization()
 data = load_data_df(1, selectedExp)
 trainData, testData = devide_data(data)
-#featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, trainData)
-#featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, testData)
+# featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, trainData)
+# featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, testData)
 featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(typesOfFeatures, trainData)
-featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(typesOfR_filter, trainData)
+# featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(typesOfR_filter, trainData)
 featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(typesOfFeatures, testData)
-featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(typesOfR_filter, testData)
+# featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(typesOfR_filter, testData)
 
-trainTimes = featuresTrainDF.index.values #times of all measurements in numpy format
-testTimes = featuresTestDF.index.values #times of all measurements in numpy format
+trainTimes = featuresTrainDF.index.values  # times of all measurements in numpy format
+testTimes = featuresTestDF.index.values  # times of all measurements in numpy format
 featuresTrainAvgDF = pd.DataFrame()
 resultsTrainDeltaDF = pd.DataFrame()
-for meas in range(len(trainTimes)-1):
-    if trainTimes[meas] < trainTimes[meas+1]:
+for meas in range(len(trainTimes) - 1):
+    if trainTimes[meas] < trainTimes[meas + 1]:
         avgTime = (trainTimes[meas] + trainTimes[meas + 1]) / 2
-        avgFeatures = (featuresTrainDF.iloc[meas] + featuresTrainDF.iloc[meas+1])/2
+        avgFeatures = (featuresTrainDF.iloc[meas] + featuresTrainDF.iloc[meas + 1]) / 2
         avgFeatures.name = avgTime
-        deltaResults = (resultsTrainDF.iloc[meas+1] - resultsTrainDF.iloc[meas])/(trainTimes[meas + 1] - trainTimes[meas])
+        deltaResults = (resultsTrainDF.iloc[meas + 1] - resultsTrainDF.iloc[meas]) / (
+                    trainTimes[meas + 1] - trainTimes[meas])
         deltaResults.name = avgTime
         featuresTrainAvgDF = featuresTrainAvgDF.append(avgFeatures)
         resultsTrainDeltaDF = resultsTrainDeltaDF.append(deltaResults)
@@ -758,22 +768,23 @@ featuresTrainAvgDF['Time'] = featuresTrainAvgDF.index
 
 featuresTestAvgDF = pd.DataFrame()
 resultsTestDeltaDF = pd.DataFrame()
-for meas in range(len(testTimes)-1):
-    if testTimes[meas] < testTimes[meas+1]:
+for meas in range(len(testTimes) - 1):
+    if testTimes[meas] < testTimes[meas + 1]:
         avgTime = (testTimes[meas] + testTimes[meas + 1]) / 2
-        avgFeatures = (featuresTestDF.iloc[meas] + featuresTestDF.iloc[meas+1])/2
+        avgFeatures = (featuresTestDF.iloc[meas] + featuresTestDF.iloc[meas + 1]) / 2
         avgFeatures.name = avgTime
-        deltaResults = (resultsTestDF.iloc[meas+1] - resultsTestDF.iloc[meas])/(testTimes[meas + 1] - testTimes[meas])
+        deltaResults = (resultsTestDF.iloc[meas + 1] - resultsTestDF.iloc[meas]) / (
+                    testTimes[meas + 1] - testTimes[meas])
         deltaResults.name = avgTime
         featuresTestAvgDF = featuresTestAvgDF.append(avgFeatures)
         resultsTestDeltaDF = resultsTestDeltaDF.append(deltaResults)
 featuresTestAvgDF = featuresTestAvgDF.reindex(featuresTestDF.columns, axis=1)
 resultsTestDeltaDF = resultsTestDeltaDF.reindex(resultsTestDF.columns, axis=1)
 featuresTestAvgDF['Time'] = featuresTestAvgDF.index
-t1=featuresTestAvgDF['Time'].to_numpy()
-ind_new_exp=np.diff(t1)
+t1 = featuresTestAvgDF['Time'].to_numpy()
+ind_new_exp = np.diff(t1)
 
-featureNames.append('Time')#append time to feature names for further analysis
+featureNames.append('Time')  # append time to feature names for further analysis
 numMeasTrain = featuresTrainAvgDF.shape[0]
 allFeatAvgDF = featuresTrainAvgDF.append(featuresTestAvgDF)
 if preprocessingTechnique == 'Standardize (Robust scalar)':
@@ -805,137 +816,220 @@ FeatureTestProcessed = FeaturesProcessed.iloc[numMeasTrain:]
 featuresTrainNP = FeatureTrainProcessed.to_numpy()
 titterTrainNP = resultsTrainProcessed['Titter'].to_numpy()
 featuresTestNP = FeatureTestProcessed.to_numpy()
-trainTimes = resultsTrainProcessed.index.values #times of all measurements in numpy format
+trainTimes = resultsTrainProcessed.index.values  # times of all measurements in numpy format
 # sectionDecisionType = "radius"
 # radius = 2 #hours
 # loessModel = skmisc.loess(featuresTrainNP, titterTrainNP)
 # selectedVar = ['meanS', 'meanAmm']# The options are: ['meanDO', 'meanAmm','meanS','meanpH','meanAgi','meanAmmFeed', 'Time dextrose low' 'Time']
-VarNP=np.empty((len(FeatureTrainProcessed[selectedTypesOfFeatures[0]].to_numpy()),len(selectedTypesOfFeatures) ))
-VartestNP=np.empty((len(FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()),len(selectedTypesOfFeatures) ))
-for i2 in range(len(selectedTypesOfFeatures)):
-    VarNP[:,i2] = FeatureTrainProcessed[selectedTypesOfFeatures[i2]].to_numpy()
-    VartestNP[:,i2] = FeatureTestProcessed[selectedTypesOfFeatures[i2]].to_numpy()
-VarfilterNP=np.empty((len(FeatureTrainProcessed[selectedTypesOfR_filter[0]].to_numpy()),len(selectedTypesOfR_filter) ))
-VarfiltertestNP=np.empty((len(FeatureTestProcessed[selectedTypesOfR_filter[0]].to_numpy()),len(selectedTypesOfR_filter) ))
-for i2 in range(len(selectedTypesOfR_filter)):
-    VarfilterNP[:,i2] = FeatureTrainProcessed[selectedTypesOfR_filter[i2]].to_numpy()
-    VarfiltertestNP[:,i2] = FeatureTestProcessed[selectedTypesOfR_filter[i2]].to_numpy()
 
-#firstVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[0]].to_numpy()
-#secondVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[1]].to_numpy()
-# zout, wout = loess_2d(firstVarNP, secondVarNP, titterTrainNP, frac=0.2, degree=1, rescale=True)
-# test
-#firstVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()
-#secondVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[1]].to_numpy()
-titterTestNP = resultsTestProcessed['Titter'].to_numpy()
-z_smoot_test=np.empty(VartestNP.shape[0])
-# nd
-X=VarNP
+if isRunCombos:
+    featuresOptions = sum([list(map(list, combinations(selectedTypesOfFeatures, i))) for i in range(len(selectedTypesOfFeatures) + 1)],
+        [])
+    featuresOptions = featuresOptions[1:]
+    R_filterOptions = sum([list(map(list, combinations(selectedTypesOfR_filter, i))) for i in range(len(selectedTypesOfR_filter) + 1)],
+        [])
+    R_filterOptions = R_filterOptions[1:]
+    meanErrMat = np.zeros([len(featuresOptions), len(R_filterOptions)])
+    idxFeat = -1
+    for featOpt in featuresOptions:
+        idxFeat += 1
+        idxFilt = -1
+        for filtOpt in R_filterOptions:
+            idxFilt += 1
+            VarNP = np.empty((len(FeatureTrainProcessed[featOpt[0]].to_numpy()), len(featOpt)))
+            VartestNP = np.empty((len(FeatureTestProcessed[featOpt[0]].to_numpy()), len(featOpt)))
+            for i2 in range(len(featOpt)):
+                VarNP[:, i2] = FeatureTrainProcessed[featOpt[i2]].to_numpy()
+                VartestNP[:, i2] = FeatureTestProcessed[featOpt[i2]].to_numpy()
+            VarfilterNP = np.empty(
+                (len(FeatureTrainProcessed[filtOpt[0]].to_numpy()), len(filtOpt)))
+            VarfiltertestNP = np.empty(
+                (len(FeatureTestProcessed[filtOpt[0]].to_numpy()), len(filtOpt)))
+            for i2 in range(len(filtOpt)):
+                VarfilterNP[:, i2] = FeatureTrainProcessed[filtOpt[i2]].to_numpy()
+                VarfiltertestNP[:, i2] = FeatureTestProcessed[filtOpt[i2]].to_numpy()
+
+        # firstVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[0]].to_numpy()
+        # secondVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[1]].to_numpy()
+        # zout, wout = loess_2d(firstVarNP, secondVarNP, titterTrainNP, frac=0.2, degree=1, rescale=True)
+        # test
+        # firstVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()
+        # secondVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[1]].to_numpy()
+            titterTestNP = resultsTestProcessed['Titter'].to_numpy()
+            z_smoot_test = np.empty(VartestNP.shape[0])
+            # nd
+            X = VarNP
+
+            for i11 in range(len(z_smoot_test)):
+                X_test = VartestNP[i11, :]
+                X_filter_test = VarfiltertestNP[i11, :]
+                zout1, wout = loess_nd_test_point(VarNP, VarfilterNP, titterTrainNP, X_test, X_filter_test,
+                                                  titterTestNP[i11],
+                                                  frac=fractionMinVal, degree=deg, rescale=False)
+                z_smoot_test[i11] = zout1
+
+            meanErrMat[idxFeat, idxFilt] = np.mean(np.abs((z_smoot_test-titterTestNP)/(titterTestNP+z_smoot_test)))
+    minimalIdx = np.unravel_index(np.argmin(meanErrMat, axis=None), meanErrMat.shape)
+    bestFeatureCombo = featuresOptions[minimalIdx[0]]
+    bestFilterCombo = R_filterOptions[minimalIdx[1]]
+    k_s = 0
+    for z1 in range(len(ind_new_exp) - 1):
+        if ind_new_exp[z1] <= 0:
+            # f1,ax=plt.figure();
+            fig, ax = plt.subplots()
+            h1, = ax.plot(t1[k_s:z1 + 1], titterTestNP[k_s:z1 + 1], 'ro', label='Data'),
+            h2, = ax.plot(t1[k_s:z1 + 1], z_smoot_test[k_s:z1 + 1], 'bo', label='predict')
+            annotation_string = r"features= %s" % (bestFeatureCombo)
+            annotation_string += "\n"
+            annotation_string += r"distance filter= %s" % (bestFilterCombo)
+            annotation_string += r", frac= %f" % (np.round(fractionMinVal, 2))
+            annotation_string += r", mean error= %f" % (meanErrMat[minimalIdx])
+            annotation_string += r", sum data= %f" % (sum(titterTestNP[k_s:z1 + 1]))
+            annotation_string += r", sum predict= %f" % (sum(z_smoot_test[k_s:z1 + 1]))
+
+            plt.title(annotation_string)
+            # ax.axis('equal')
+            leg = ax.legend();
+            plt.xlabel('Time')
+            plt.grid
+            plt.ylabel('dp/dt')
+            k_s = z1 + 1
+
+    plt.show()
+    q=3
 
 
-for i11 in range(len(z_smoot_test)):
-    X_test=VartestNP[i11,:]
-    X_filter_test=VarfiltertestNP[i11,:]
-    zout1, wout = loess_nd_test_point(VarNP,VarfilterNP, titterTrainNP,X_test ,X_filter_test,titterTestNP[i11], frac=fractionMinVal, degree=deg, rescale=False)
-    z_smoot_test[i11]=zout1
-#for i11 in range(len(firstVarTestNP)):
-  #  zout1, wout = loess_2d_test_point(firstVarNP, secondVarNP, titterTrainNP, firstVarTestNP[i11],
- #                                     secondVarTestNP[i11],titterTestNP[i11], frac=fractionMinVal, degree=deg, rescale=False)
- #   z_smoot_test[i11]=zout1
-err_v=(z_smoot_test-titterTestNP)/titterTestNP
-k_s=0
-for z1 in range(len(ind_new_exp)-1):
-    if ind_new_exp[z1]<=0:
-        #f1,ax=plt.figure();
-        fig, ax = plt.subplots()
-        h1,=ax.plot(t1[k_s:z1+1], titterTestNP[k_s:z1+1], 'ro', label='Data'),
-        h2,=ax.plot(t1[k_s:z1+1], z_smoot_test[k_s:z1+1], 'bo', label='predict')
-        plt.title(list(['std=', featureNames]))
-       #ax.axis('equal')
-        leg = ax.legend();
-        #plt.xlabel(selectedTypesOfFeatures[0])
-        plt.ylabel('dp/dt')
-        k_s= z1+1
-
-
-plt.show()
-plt.figure();plt.plot(np.arange(z_smoot_test.size),err_v,'ro')
-plt.title(np.std(err_v))
-plt.figure()
-plt.clf()
-if fractionMaxVal-fractionMinVal < 0.4:
-    fracOptions = np.arange(fractionMinVal, fractionMaxVal, 0.05)
 else:
-    fracOptions = np.arange(fractionMinVal, fractionMaxVal, 0.1)
+    VarNP = np.empty((len(FeatureTrainProcessed[selectedTypesOfFeatures[0]].to_numpy()), len(selectedTypesOfFeatures)))
+    VartestNP = np.empty(
+        (len(FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()), len(selectedTypesOfFeatures)))
+    for i2 in range(len(selectedTypesOfFeatures)):
+        VarNP[:, i2] = FeatureTrainProcessed[selectedTypesOfFeatures[i2]].to_numpy()
+        VartestNP[:, i2] = FeatureTestProcessed[selectedTypesOfFeatures[i2]].to_numpy()
+    VarfilterNP = np.empty(
+        (len(FeatureTrainProcessed[selectedTypesOfR_filter[0]].to_numpy()), len(selectedTypesOfR_filter)))
+    VarfiltertestNP = np.empty(
+        (len(FeatureTestProcessed[selectedTypesOfR_filter[0]].to_numpy()), len(selectedTypesOfR_filter)))
+    for i2 in range(len(selectedTypesOfR_filter)):
+        VarfilterNP[:, i2] = FeatureTrainProcessed[selectedTypesOfR_filter[i2]].to_numpy()
+        VarfiltertestNP[:, i2] = FeatureTestProcessed[selectedTypesOfR_filter[i2]].to_numpy()
 
-plt.subplot(3, 3, 1)
-plot_velfield(firstVarNP, secondVarNP, titterTrainNP)
-plt.xlabel(selectedTypesOfFeatures[0])
-plt.ylabel(selectedTypesOfFeatures[1])
-plt.title("True Function")
+    # firstVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[0]].to_numpy()
+    # secondVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[1]].to_numpy()
+    # zout, wout = loess_2d(firstVarNP, secondVarNP, titterTrainNP, frac=0.2, degree=1, rescale=True)
+    # test
+    # firstVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()
+    # secondVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[1]].to_numpy()
+    titterTestNP = resultsTestProcessed['Titter'].to_numpy()
+    z_smoot_test = np.empty(VartestNP.shape[0])
+    # nd
+    X = VarNP
 
-for idx in range(len(fracOptions)):
-    zout, wout = loess_2d(firstVarNP, secondVarNP, titterTrainNP, frac=fracOptions[idx], degree=1, rescale=True)
-    plt.subplot(3, 3, idx+2)
-    plot_velfield(firstVarNP, secondVarNP, zout)
-    plt.xlabel(selectedTypesOfFeatures[0])
-    plt.ylabel(selectedTypesOfFeatures[1])
-    plt.title("Fraction="+str(fracOptions[idx]))
+    for i11 in range(len(z_smoot_test)):
+        X_test = VartestNP[i11, :]
+        X_filter_test = VarfiltertestNP[i11, :]
+        zout1, wout = loess_nd_test_point(VarNP, VarfilterNP, titterTrainNP, X_test, X_filter_test, titterTestNP[i11],
+                                          frac=fractionMinVal, degree=deg, rescale=False)
+        z_smoot_test[i11] = zout1
+    # for i11 in range(len(firstVarTestNP)):
+    #  zout1, wout = loess_2d_test_point(firstVarNP, secondVarNP, titterTrainNP, firstVarTestNP[i11],
+    #                                     secondVarTestNP[i11],titterTestNP[i11], frac=fractionMinVal, degree=deg, rescale=False)
+    #   z_smoot_test[i11]=zout1
+    err_v = (z_smoot_test - titterTestNP) / titterTestNP
+    k_s = 0
+    for z1 in range(len(ind_new_exp) - 1):
+        if ind_new_exp[z1] <= 0:
+            # f1,ax=plt.figure();
+            fig, ax = plt.subplots()
+            h1, = ax.plot(t1[k_s:z1 + 1], titterTestNP[k_s:z1 + 1], 'ro', label='Data'),
+            h2, = ax.plot(t1[k_s:z1 + 1], z_smoot_test[k_s:z1 + 1], 'bo', label='predict')
+            plt.title(list(['std=', featureNames]))
+            # ax.axis('equal')
+            leg = ax.legend();
+            # plt.xlabel(selectedTypesOfFeatures[0])
+            plt.ylabel('dp/dt')
+            k_s = z1 + 1
 
-plt.show()
-# plt.subplot(132)
-# plot_velfield(x, y, zran)
-# plt.title("With Noise Added")
-# plt.tick_params(labelleft=False)
-plt.subplot(121)
-plot_velfield(firstVarNP, secondVarNP, titterTrainNP)
-plt.xlabel(selectedTypesOfFeatures[0])
-plt.ylabel(selectedTypesOfFeatures[1])
-plt.title("True Function")
+    plt.show()
 
-plt.subplot(122)
-plot_velfield(firstVarNP, secondVarNP, zout)
-plt.title("LOESS Recovery")
-plt.xlabel(selectedTypesOfFeatures[0])
-plt.ylabel(selectedTypesOfFeatures[1])
-plt.tick_params(labelleft=False)
-plt.show()
-
-plt.figure()
-plot_velfield(featuresTrainNP[:, 1], featuresTrainNP[:, 2], titterTrainNP, 1)
-for sample in range(featuresTestDF.size):
-    currentTime = featuresTestDF.iloc[sample].name
-    timeDelta = abs(trainTimes-currentTime)
-    if sectionDecisionType == "radius":
-        relMeasIdx = np.where(timeDelta <= radius)
-        currentTime = featuresTrainDF.iloc[relMeasIdx]
-
-
-# experiments to be tested
-# variables = ['S', 'DO', 'A']# which variables to analyse
-# isLoadFromExcel = 0# 0 if data loaded from .p file, 1 if from excel
-q=2
-# initialize settings, constants and initial conditions
-plt.show()
-
-# load the data
-# if isLoadFromExcel:
-#     data, offlineData = read_data(experiments)
+#
+# plt.figure();plt.plot(np.arange(z_smoot_test.size),err_v,'ro')
+# plt.title(np.std(err_v))
+# plt.figure()
+# plt.clf()
+# if fractionMaxVal-fractionMinVal < 0.4:
+#     fracOptions = np.arange(fractionMinVal, fractionMaxVal, 0.05)
 # else:
-#     file_name = "allData.p"
-#     with open(file_name, 'rb') as f:
-#         allData = pickle.load(f)
-#     data = {key: allData[key] for key in allData.keys() & experiments}
-#     file_name = "allOfflineData.p"
-#     with open(file_name, 'rb') as f:
-#         allOfflineData = pickle.load(f)
-#     string = '_dex'
-#     offlineData = {key: allOfflineData[key] for key in allOfflineData.keys() & [x+string for x in experiments]}
+#     fracOptions = np.arange(fractionMinVal, fractionMaxVal, 0.1)
 #
-# #Interpulate data
+# plt.subplot(3, 3, 1)
+# plot_velfield(firstVarNP, secondVarNP, titterTrainNP)
+# plt.xlabel(selectedTypesOfFeatures[0])
+# plt.ylabel(selectedTypesOfFeatures[1])
+# plt.title("True Function")
+#
+# for idx in range(len(fracOptions)):
+#     zout, wout = loess_2d(firstVarNP, secondVarNP, titterTrainNP, frac=fracOptions[idx], degree=1, rescale=True)
+#     plt.subplot(3, 3, idx+2)
+#     plot_velfield(firstVarNP, secondVarNP, zout)
+#     plt.xlabel(selectedTypesOfFeatures[0])
+#     plt.ylabel(selectedTypesOfFeatures[1])
+#     plt.title("Fraction="+str(fracOptions[idx]))
+#
+# plt.show()
+# # plt.subplot(132)
+# # plot_velfield(x, y, zran)
+# # plt.title("With Noise Added")
+# # plt.tick_params(labelleft=False)
+# plt.subplot(121)
+# plot_velfield(firstVarNP, secondVarNP, titterTrainNP)
+# plt.xlabel(selectedTypesOfFeatures[0])
+# plt.ylabel(selectedTypesOfFeatures[1])
+# plt.title("True Function")
+#
+# plt.subplot(122)
+# plot_velfield(firstVarNP, secondVarNP, zout)
+# plt.title("LOESS Recovery")
+# plt.xlabel(selectedTypesOfFeatures[0])
+# plt.ylabel(selectedTypesOfFeatures[1])
+# plt.tick_params(labelleft=False)
+# plt.show()
+#
+# plt.figure()
+# plot_velfield(featuresTrainNP[:, 1], featuresTrainNP[:, 2], titterTrainNP, 1)
+# for sample in range(featuresTestDF.size):
+#     currentTime = featuresTestDF.iloc[sample].name
+#     timeDelta = abs(trainTimes-currentTime)
+#     if sectionDecisionType == "radius":
+#         relMeasIdx = np.where(timeDelta <= radius)
+#         currentTime = featuresTrainDF.iloc[relMeasIdx]
 #
 #
-# #Initialize
-# functionCombos = [p for p in itertools.product(functionOptions, repeat=3)]
-
-
+# # experiments to be tested
+# # variables = ['S', 'DO', 'A']# which variables to analyse
+# # isLoadFromExcel = 0# 0 if data loaded from .p file, 1 if from excel
+# q=2
+# # initialize settings, constants and initial conditions
+# plt.show()
+#
+# # load the data
+# # if isLoadFromExcel:
+# #     data, offlineData = read_data(experiments)
+# # else:
+# #     file_name = "allData.p"
+# #     with open(file_name, 'rb') as f:
+# #         allData = pickle.load(f)
+# #     data = {key: allData[key] for key in allData.keys() & experiments}
+# #     file_name = "allOfflineData.p"
+# #     with open(file_name, 'rb') as f:
+# #         allOfflineData = pickle.load(f)
+# #     string = '_dex'
+# #     offlineData = {key: allOfflineData[key] for key in allOfflineData.keys() & [x+string for x in experiments]}
+# #
+# # #Interpulate data
+# #
+# #
+# # #Initialize
+# # functionCombos = [p for p in itertools.product(functionOptions, repeat=3)]
+#
+#
