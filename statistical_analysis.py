@@ -1,4 +1,6 @@
 import numpy as np
+import math
+import random
 from read_data import read_data
 import pickle
 from function_for_GUI import *
@@ -243,6 +245,7 @@ if methodType == "Function Search":
         interpWantedData = load_data_df(isLoadData, selectedExp)
 
     trainData, testData = devide_data(interpWantedData)
+
     if isLoadData:
         del data, interpWantedData
     else:
@@ -722,139 +725,188 @@ elif methodType == "LOESS":
     button.place(rely=0.95, relx=0.5, anchor=CENTER)
     loess.mainloop()
 
-# get GUI data
-if degreeVal == ['First degree']:
-    deg = 1
-elif degreeVal == ['Second degree']:
-    deg = 2
-isRunCombos = isRunCombos.get()
+    # get GUI data
+    if degreeVal == ['First degree']:
+        deg = 1
+    elif degreeVal == ['Second degree']:
+        deg = 2
+    isRunCombos = isRunCombos.get()
 
-# fractionMinVal = float(FracMinValEntry.get())
-# fractionMaxVal = float(FracMaxValEntry.get())
+    # fractionMinVal = float(FracMinValEntry.get())
+    # fractionMaxVal = float(FracMaxValEntry.get())
 
-# os.system("pause")
+    # os.system("pause")
 
-# selectedTypesOfFeatures = ['Mean dO [40-end]', 'Mean Ammonia [40-end]', 'Mean Dextrose [40-end]', 'Mean pH [40-end]',
-#                  'Mean Agitation [40-end]', 'Sum Ammonia feeding [40-end]', 'Time dextrose low'
-#                  'Peak dO level']
-# selectedTypesOfFeatures = ['Mean dO [40-end]', 'Mean Ammonia [40-end]']
-Settings, Const, InitCond = simulation_initialization()
-data = load_data_df(1, selectedExp)
-trainData, testData = devide_data(data)
-# featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, trainData)
-# featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, testData)
-featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(typesOfFeatures, trainData)
-# featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(typesOfR_filter, trainData)
-featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(typesOfFeatures, testData)
-# featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(typesOfR_filter, testData)
+    # selectedTypesOfFeatures = ['Mean dO [40-end]', 'Mean Ammonia [40-end]', 'Mean Dextrose [40-end]', 'Mean pH [40-end]',
+    #                  'Mean Agitation [40-end]', 'Sum Ammonia feeding [40-end]', 'Time dextrose low'
+    #                  'Peak dO level']
+    # selectedTypesOfFeatures = ['Mean dO [40-end]', 'Mean Ammonia [40-end]']
+    Settings, Const, InitCond = simulation_initialization()
+    data = load_data_df(1, selectedExp)
+    #trainData, testData = devide_data(data)
+    # comb
+    numOfExp = len(data)
+    numExpForTrain = math.floor(numOfExp*0.75)
+    expIdx = range(0, numOfExp - 1)
+    trainIdx = random.sample(expIdx, numExpForTrain)
+    for comb in range (0, int(numExpForTrain/2)):
+        trainData,testData,trainIdx=devide_data_comb(data,expIdx,trainIdx)
+        # featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, trainData)
+        # featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, testData)
+        featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(typesOfFeatures, trainData)
+        # featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(typesOfR_filter, trainData)
+        featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(typesOfFeatures, testData)
+        # featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(typesOfR_filter, testData)
 
-trainTimes = featuresTrainDF.index.values  # times of all measurements in numpy format
-testTimes = featuresTestDF.index.values  # times of all measurements in numpy format
-featuresTrainAvgDF = pd.DataFrame()
-resultsTrainDeltaDF = pd.DataFrame()
-for meas in range(len(trainTimes) - 1):
-    if trainTimes[meas] < trainTimes[meas + 1]:
-        avgTime = (trainTimes[meas] + trainTimes[meas + 1]) / 2
-        avgFeatures = (featuresTrainDF.iloc[meas] + featuresTrainDF.iloc[meas + 1]) / 2
-        avgFeatures.name = avgTime
-        deltaResults = (resultsTrainDF.iloc[meas + 1] - resultsTrainDF.iloc[meas]) / (
-                    trainTimes[meas + 1] - trainTimes[meas])
-        deltaResults.name = avgTime
-        featuresTrainAvgDF = featuresTrainAvgDF.append(avgFeatures)
-        resultsTrainDeltaDF = resultsTrainDeltaDF.append(deltaResults)
-featuresTrainAvgDF = featuresTrainAvgDF.reindex(featuresTrainDF.columns, axis=1)
-resultsTrainDeltaDF = resultsTrainDeltaDF.reindex(resultsTrainDF.columns, axis=1)
-featuresTrainAvgDF['Time'] = featuresTrainAvgDF.index
+        trainTimes = featuresTrainDF.index.values  # times of all measurements in numpy format
+        testTimes = featuresTestDF.index.values  # times of all measurements in numpy format
+        featuresTrainAvgDF = pd.DataFrame()
+        resultsTrainDeltaDF = pd.DataFrame()
+        for meas in range(len(trainTimes) - 1):
+            if trainTimes[meas] < trainTimes[meas + 1]:
+                avgTime = (trainTimes[meas] + trainTimes[meas + 1]) / 2
+                avgFeatures = (featuresTrainDF.iloc[meas] + featuresTrainDF.iloc[meas + 1]) / 2
+                avgFeatures.name = avgTime
+                deltaResults = (resultsTrainDF.iloc[meas + 1] - resultsTrainDF.iloc[meas]) / (
+                            trainTimes[meas + 1] - trainTimes[meas])
+                deltaResults.name = avgTime
+                featuresTrainAvgDF = featuresTrainAvgDF.append(avgFeatures)
+                resultsTrainDeltaDF = resultsTrainDeltaDF.append(deltaResults)
+        featuresTrainAvgDF = featuresTrainAvgDF.reindex(featuresTrainDF.columns, axis=1)
+        resultsTrainDeltaDF = resultsTrainDeltaDF.reindex(resultsTrainDF.columns, axis=1)
+        featuresTrainAvgDF['Time'] = featuresTrainAvgDF.index
 
-featuresTestAvgDF = pd.DataFrame()
-resultsTestDeltaDF = pd.DataFrame()
-for meas in range(len(testTimes) - 1):
-    if testTimes[meas] < testTimes[meas + 1]:
-        avgTime = (testTimes[meas] + testTimes[meas + 1]) / 2
-        avgFeatures = (featuresTestDF.iloc[meas] + featuresTestDF.iloc[meas + 1]) / 2
-        avgFeatures.name = avgTime
-        deltaResults = (resultsTestDF.iloc[meas + 1] - resultsTestDF.iloc[meas]) / (
-                    testTimes[meas + 1] - testTimes[meas])
-        deltaResults.name = avgTime
-        featuresTestAvgDF = featuresTestAvgDF.append(avgFeatures)
-        resultsTestDeltaDF = resultsTestDeltaDF.append(deltaResults)
-featuresTestAvgDF = featuresTestAvgDF.reindex(featuresTestDF.columns, axis=1)
-resultsTestDeltaDF = resultsTestDeltaDF.reindex(resultsTestDF.columns, axis=1)
-featuresTestAvgDF['Time'] = featuresTestAvgDF.index
-t1 = featuresTestAvgDF['Time'].to_numpy()
-ind_new_exp = np.diff(t1)
+        featuresTestAvgDF = pd.DataFrame()
+        resultsTestDeltaDF = pd.DataFrame()
+        for meas in range(len(testTimes) - 1):
+            if testTimes[meas] < testTimes[meas + 1]:
+                avgTime = (testTimes[meas] + testTimes[meas + 1]) / 2
+                avgFeatures = (featuresTestDF.iloc[meas] + featuresTestDF.iloc[meas + 1]) / 2
+                avgFeatures.name = avgTime
+                deltaResults = (resultsTestDF.iloc[meas + 1] - resultsTestDF.iloc[meas]) / (
+                            testTimes[meas + 1] - testTimes[meas])
+                deltaResults.name = avgTime
+                featuresTestAvgDF = featuresTestAvgDF.append(avgFeatures)
+                resultsTestDeltaDF = resultsTestDeltaDF.append(deltaResults)
+        featuresTestAvgDF = featuresTestAvgDF.reindex(featuresTestDF.columns, axis=1)
+        resultsTestDeltaDF = resultsTestDeltaDF.reindex(resultsTestDF.columns, axis=1)
+        featuresTestAvgDF['Time'] = featuresTestAvgDF.index
+        t1 = featuresTestAvgDF['Time'].to_numpy()
+        ind_new_exp = np.diff(t1)
 
-featureNames.append('Time')  # append time to feature names for further analysis
-numMeasTrain = featuresTrainAvgDF.shape[0]
-allFeatAvgDF = featuresTrainAvgDF.append(featuresTestAvgDF)
-if preprocessingTechnique == 'Standardize (Robust scalar)':
-    FeaturesProcessed = RobustScaler().fit_transform(allFeatAvgDF)
-    # FeatureTestProcessed = RobustScaler().fit_transform(featuresTestAvgDF)
-    resultsTrainProcessed = (resultsTrainDeltaDF)
-    resultsTestProcessed = (resultsTestDeltaDF)
-    FeaturesProcessed = pd.DataFrame(FeaturesProcessed, columns=featureNames)
-    # FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
-    resultsTrainProcessed = pd.DataFrame(resultsTrainProcessed, columns=['Titter', 'Impurity'])
-    resultsTestProcessed = pd.DataFrame(resultsTestProcessed, columns=['Titter', 'Impurity'])
-elif preprocessingTechnique == 'No preprocessing':
-    FeaturesProcessed = allFeatAvgDF
-    # FeatureTestProcessed = featuresTestAvgDF
-    resultsTrainProcessed = resultsTrainDeltaDF
-    resultsTestProcessed = resultsTestDeltaDF
-elif preprocessingTechnique == 'scaling (0-1)':
-    FeaturesProcessed = MinMaxScaler().fit_transform(allFeatAvgDF)
-    # FeatureTestProcessed = MinMaxScaler().fit_transform(featuresTestAvgDF)
-    resultsTrainProcessed = (resultsTrainDeltaDF)
-    resultsTestProcessed = (resultsTestDeltaDF)
-    FeaturesProcessed = pd.DataFrame(FeaturesProcessed, columns=featureNames)
-    # FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
-    resultsTrainProcessed = pd.DataFrame(resultsTrainProcessed, columns=['Titter', 'Impurity'])
-    resultsTestProcessed = pd.DataFrame(resultsTestProcessed, columns=['Titter', 'Impurity'])
+        featureNames.append('Time')  # append time to feature names for further analysis
+        numMeasTrain = featuresTrainAvgDF.shape[0]
+        allFeatAvgDF = featuresTrainAvgDF.append(featuresTestAvgDF)
+        if preprocessingTechnique == 'Standardize (Robust scalar)':
+            FeaturesProcessed = RobustScaler().fit_transform(allFeatAvgDF)
+            # FeatureTestProcessed = RobustScaler().fit_transform(featuresTestAvgDF)
+            resultsTrainProcessed = (resultsTrainDeltaDF)
+            resultsTestProcessed = (resultsTestDeltaDF)
+            FeaturesProcessed = pd.DataFrame(FeaturesProcessed, columns=featureNames)
+            # FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
+            resultsTrainProcessed = pd.DataFrame(resultsTrainProcessed, columns=['Titter', 'Impurity'])
+            resultsTestProcessed = pd.DataFrame(resultsTestProcessed, columns=['Titter', 'Impurity'])
+        elif preprocessingTechnique == 'No preprocessing':
+            FeaturesProcessed = allFeatAvgDF
+            # FeatureTestProcessed = featuresTestAvgDF
+            resultsTrainProcessed = resultsTrainDeltaDF
+            resultsTestProcessed = resultsTestDeltaDF
+        elif preprocessingTechnique == 'scaling (0-1)':
+            FeaturesProcessed = MinMaxScaler().fit_transform(allFeatAvgDF)
+            # FeatureTestProcessed = MinMaxScaler().fit_transform(featuresTestAvgDF)
+            resultsTrainProcessed = (resultsTrainDeltaDF)
+            resultsTestProcessed = (resultsTestDeltaDF)
+            FeaturesProcessed = pd.DataFrame(FeaturesProcessed, columns=featureNames)
+            # FeatureTestProcessed = pd.DataFrame(FeatureTestProcessed, columns=featureNames)
+            resultsTrainProcessed = pd.DataFrame(resultsTrainProcessed, columns=['Titter', 'Impurity'])
+            resultsTestProcessed = pd.DataFrame(resultsTestProcessed, columns=['Titter', 'Impurity'])
 
-FeatureTrainProcessed = FeaturesProcessed.iloc[0:numMeasTrain]
-FeatureTestProcessed = FeaturesProcessed.iloc[numMeasTrain:]
-featuresTrainNP = FeatureTrainProcessed.to_numpy()
-titterTrainNP = resultsTrainProcessed['Titter'].to_numpy()
-featuresTestNP = FeatureTestProcessed.to_numpy()
-trainTimes = resultsTrainProcessed.index.values  # times of all measurements in numpy format
-# sectionDecisionType = "radius"
-# radius = 2 #hours
-# loessModel = skmisc.loess(featuresTrainNP, titterTrainNP)
-# selectedVar = ['meanS', 'meanAmm']# The options are: ['meanDO', 'meanAmm','meanS','meanpH','meanAgi','meanAmmFeed', 'Time dextrose low' 'Time']
+        FeatureTrainProcessed = FeaturesProcessed.iloc[0:numMeasTrain]
+        FeatureTestProcessed = FeaturesProcessed.iloc[numMeasTrain:]
+        featuresTrainNP = FeatureTrainProcessed.to_numpy()
+        titterTrainNP = resultsTrainProcessed['Titter'].to_numpy()
+        featuresTestNP = FeatureTestProcessed.to_numpy()
+        trainTimes = resultsTrainProcessed.index.values  # times of all measurements in numpy format
+        # sectionDecisionType = "radius"
+        # radius = 2 #hours
+        # loessModel = skmisc.loess(featuresTrainNP, titterTrainNP)
+        # selectedVar = ['meanS', 'meanAmm']# The options are: ['meanDO', 'meanAmm','meanS','meanpH','meanAgi','meanAmmFeed', 'Time dextrose low' 'Time']
 
-if isRunCombos:
-    featuresOptions = sum([list(map(list, combinations(selectedTypesOfFeatures, i))) for i in range(len(selectedTypesOfFeatures) + 1)],
-        [])
-    featuresOptions = featuresOptions[1:]
-    R_filterOptions = sum([list(map(list, combinations(selectedTypesOfR_filter, i))) for i in range(len(selectedTypesOfR_filter) + 1)],
-        [])
-    R_filterOptions = R_filterOptions[1:]
-    meanErrMat = np.zeros([len(featuresOptions), len(R_filterOptions)])
-    idxFeat = -1
-    for featOpt in featuresOptions:
-        idxFeat += 1
-        idxFilt = -1
-        for filtOpt in R_filterOptions:
-            idxFilt += 1
-            VarNP = np.empty((len(FeatureTrainProcessed[featOpt[0]].to_numpy()), len(featOpt)))
-            VartestNP = np.empty((len(FeatureTestProcessed[featOpt[0]].to_numpy()), len(featOpt)))
-            for i2 in range(len(featOpt)):
-                VarNP[:, i2] = FeatureTrainProcessed[featOpt[i2]].to_numpy()
-                VartestNP[:, i2] = FeatureTestProcessed[featOpt[i2]].to_numpy()
+        if isRunCombos:
+            featuresOptions = sum([list(map(list, combinations(selectedTypesOfFeatures, i))) for i in range(len(selectedTypesOfFeatures) + 1)],
+                [])
+            featuresOptions = featuresOptions[1:]
+            R_filterOptions = sum([list(map(list, combinations(selectedTypesOfR_filter, i))) for i in range(len(selectedTypesOfR_filter) + 1)],
+                [])
+            R_filterOptions = R_filterOptions[1:]
+            if comb==0:
+                 meanErrMat = np.zeros([len(featuresOptions), len(R_filterOptions)])
+            idxFeat = -1
+            for featOpt in featuresOptions:
+                idxFeat += 1
+                idxFilt = -1
+                for filtOpt in R_filterOptions:
+                    idxFilt += 1
+                    VarNP = np.empty((len(FeatureTrainProcessed[featOpt[0]].to_numpy()), len(featOpt)))
+                    VartestNP = np.empty((len(FeatureTestProcessed[featOpt[0]].to_numpy()), len(featOpt)))
+                    for i2 in range(len(featOpt)):
+                        VarNP[:, i2] = FeatureTrainProcessed[featOpt[i2]].to_numpy()
+                        VartestNP[:, i2] = FeatureTestProcessed[featOpt[i2]].to_numpy()
+                    VarfilterNP = np.empty(
+                        (len(FeatureTrainProcessed[filtOpt[0]].to_numpy()), len(filtOpt)))
+                    VarfiltertestNP = np.empty(
+                        (len(FeatureTestProcessed[filtOpt[0]].to_numpy()), len(filtOpt)))
+                    for i2 in range(len(filtOpt)):
+                        VarfilterNP[:, i2] = FeatureTrainProcessed[filtOpt[i2]].to_numpy()
+                        VarfiltertestNP[:, i2] = FeatureTestProcessed[filtOpt[i2]].to_numpy()
+
+                # firstVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[0]].to_numpy()
+                # secondVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[1]].to_numpy()
+                # zout, wout = loess_2d(firstVarNP, secondVarNP, titterTrainNP, frac=0.2, degree=1, rescale=True)
+                # test
+                # firstVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()
+                # secondVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[1]].to_numpy()
+                    titterTestNP = resultsTestProcessed['Titter'].to_numpy()
+                    z_smoot_test = np.empty(VartestNP.shape[0])
+                    # nd
+                    X = VarNP
+
+                    for i11 in range(len(z_smoot_test)):
+                        X_test = VartestNP[i11, :]
+                        X_filter_test = VarfiltertestNP[i11, :]
+                        zout1, wout = loess_nd_test_point(VarNP, VarfilterNP, titterTrainNP, X_test, X_filter_test,
+                                                          titterTestNP[i11],
+                                                          frac=fractionMinVal, degree=deg, rescale=False)
+                        z_smoot_test[i11] = zout1
+
+                    meanErrMat[idxFeat, idxFilt] = meanErrMat[idxFeat, idxFilt]+ np.mean(np.abs((z_smoot_test-titterTestNP)/(titterTestNP+z_smoot_test)))
+                    minimalIdx = np.unravel_index(np.argmin(meanErrMat, axis=None), meanErrMat.shape)
+                    bestFeatureCombo = featuresOptions[minimalIdx[0]]
+                    bestFilterCombo = R_filterOptions[minimalIdx[1]]
+
+        else:
+            if comb==0:
+                 meanErrMat = np.zeros([1,1])
+            VarNP = np.empty((len(FeatureTrainProcessed[selectedTypesOfFeatures[0]].to_numpy()), len(selectedTypesOfFeatures)))
+            VartestNP = np.empty(
+                (len(FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()), len(selectedTypesOfFeatures)))
+            for i2 in range(len(selectedTypesOfFeatures)):
+                VarNP[:, i2] = FeatureTrainProcessed[selectedTypesOfFeatures[i2]].to_numpy()
+                VartestNP[:, i2] = FeatureTestProcessed[selectedTypesOfFeatures[i2]].to_numpy()
             VarfilterNP = np.empty(
-                (len(FeatureTrainProcessed[filtOpt[0]].to_numpy()), len(filtOpt)))
+                (len(FeatureTrainProcessed[selectedTypesOfR_filter[0]].to_numpy()), len(selectedTypesOfR_filter)))
             VarfiltertestNP = np.empty(
-                (len(FeatureTestProcessed[filtOpt[0]].to_numpy()), len(filtOpt)))
-            for i2 in range(len(filtOpt)):
-                VarfilterNP[:, i2] = FeatureTrainProcessed[filtOpt[i2]].to_numpy()
-                VarfiltertestNP[:, i2] = FeatureTestProcessed[filtOpt[i2]].to_numpy()
+                (len(FeatureTestProcessed[selectedTypesOfR_filter[0]].to_numpy()), len(selectedTypesOfR_filter)))
+            for i2 in range(len(selectedTypesOfR_filter)):
+                VarfilterNP[:, i2] = FeatureTrainProcessed[selectedTypesOfR_filter[i2]].to_numpy()
+                VarfiltertestNP[:, i2] = FeatureTestProcessed[selectedTypesOfR_filter[i2]].to_numpy()
 
-        # firstVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[0]].to_numpy()
-        # secondVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[1]].to_numpy()
-        # zout, wout = loess_2d(firstVarNP, secondVarNP, titterTrainNP, frac=0.2, degree=1, rescale=True)
-        # test
-        # firstVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()
-        # secondVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[1]].to_numpy()
+            # firstVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[0]].to_numpy()
+            # secondVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[1]].to_numpy()
+            # zout, wout = loess_2d(firstVarNP, secondVarNP, titterTrainNP, frac=0.2, degree=1, rescale=True)
+            # test
+            # firstVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()
+            # secondVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[1]].to_numpy()
             titterTestNP = resultsTestProcessed['Titter'].to_numpy()
             z_smoot_test = np.empty(VartestNP.shape[0])
             # nd
@@ -863,15 +915,14 @@ if isRunCombos:
             for i11 in range(len(z_smoot_test)):
                 X_test = VartestNP[i11, :]
                 X_filter_test = VarfiltertestNP[i11, :]
-                zout1, wout = loess_nd_test_point(VarNP, VarfilterNP, titterTrainNP, X_test, X_filter_test,
-                                                  titterTestNP[i11],
+                zout1, wout = loess_nd_test_point(VarNP, VarfilterNP, titterTrainNP, X_test, X_filter_test, titterTestNP[i11],
                                                   frac=fractionMinVal, degree=deg, rescale=False)
                 z_smoot_test[i11] = zout1
+            meanErrMat[0, 0] = meanErrMat[0, 0]+ np.mean(np.abs((z_smoot_test-titterTestNP)/(titterTestNP+z_smoot_test)))
+            minimalIdx =[0, 0]#np.unravel_index(np.argmin(meanErrMat, axis=None), meanErrMat.shape)
+            bestFeatureCombo = selectedTypesOfFeatures
+            bestFilterCombo = selectedTypesOfR_filter
 
-            meanErrMat[idxFeat, idxFilt] = np.mean(np.abs((z_smoot_test-titterTestNP)/(titterTestNP+z_smoot_test)))
-    minimalIdx = np.unravel_index(np.argmin(meanErrMat, axis=None), meanErrMat.shape)
-    bestFeatureCombo = featuresOptions[minimalIdx[0]]
-    bestFilterCombo = R_filterOptions[minimalIdx[1]]
     k_s = 0
     for z1 in range(len(ind_new_exp) - 1):
         if ind_new_exp[z1] <= 0:
@@ -883,9 +934,9 @@ if isRunCombos:
             annotation_string += "\n"
             annotation_string += r"distance filter= %s" % (bestFilterCombo)
             annotation_string += r", frac= %f" % (np.round(fractionMinVal, 2))
-            annotation_string += r", mean error= %f" % (meanErrMat[minimalIdx])
-            annotation_string += r", sum data= %f" % (sum(titterTestNP[k_s:z1 + 1]))
-            annotation_string += r", sum predict= %f" % (sum(z_smoot_test[k_s:z1 + 1]))
+            annotation_string += r", mean error= %f" % np.mean((meanErrMat[minimalIdx]))
+            #annotation_string += r", sum data= %f" % (sum(titterTestNP[k_s:z1 + 1]))
+            #annotation_string += r", sum predict= %f" % (sum(z_smoot_test[k_s:z1 + 1]))
 
             plt.title(annotation_string)
             # ax.axis('equal')
@@ -899,38 +950,7 @@ if isRunCombos:
     q=3
 
 
-else:
-    VarNP = np.empty((len(FeatureTrainProcessed[selectedTypesOfFeatures[0]].to_numpy()), len(selectedTypesOfFeatures)))
-    VartestNP = np.empty(
-        (len(FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()), len(selectedTypesOfFeatures)))
-    for i2 in range(len(selectedTypesOfFeatures)):
-        VarNP[:, i2] = FeatureTrainProcessed[selectedTypesOfFeatures[i2]].to_numpy()
-        VartestNP[:, i2] = FeatureTestProcessed[selectedTypesOfFeatures[i2]].to_numpy()
-    VarfilterNP = np.empty(
-        (len(FeatureTrainProcessed[selectedTypesOfR_filter[0]].to_numpy()), len(selectedTypesOfR_filter)))
-    VarfiltertestNP = np.empty(
-        (len(FeatureTestProcessed[selectedTypesOfR_filter[0]].to_numpy()), len(selectedTypesOfR_filter)))
-    for i2 in range(len(selectedTypesOfR_filter)):
-        VarfilterNP[:, i2] = FeatureTrainProcessed[selectedTypesOfR_filter[i2]].to_numpy()
-        VarfiltertestNP[:, i2] = FeatureTestProcessed[selectedTypesOfR_filter[i2]].to_numpy()
 
-    # firstVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[0]].to_numpy()
-    # secondVarNP = FeatureTrainProcessed[selectedTypesOfFeatures[1]].to_numpy()
-    # zout, wout = loess_2d(firstVarNP, secondVarNP, titterTrainNP, frac=0.2, degree=1, rescale=True)
-    # test
-    # firstVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()
-    # secondVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[1]].to_numpy()
-    titterTestNP = resultsTestProcessed['Titter'].to_numpy()
-    z_smoot_test = np.empty(VartestNP.shape[0])
-    # nd
-    X = VarNP
-
-    for i11 in range(len(z_smoot_test)):
-        X_test = VartestNP[i11, :]
-        X_filter_test = VarfiltertestNP[i11, :]
-        zout1, wout = loess_nd_test_point(VarNP, VarfilterNP, titterTrainNP, X_test, X_filter_test, titterTestNP[i11],
-                                          frac=fractionMinVal, degree=deg, rescale=False)
-        z_smoot_test[i11] = zout1
     # for i11 in range(len(firstVarTestNP)):
     #  zout1, wout = loess_2d_test_point(firstVarNP, secondVarNP, titterTrainNP, firstVarTestNP[i11],
     #                                     secondVarTestNP[i11],titterTestNP[i11], frac=fractionMinVal, degree=deg, rescale=False)
