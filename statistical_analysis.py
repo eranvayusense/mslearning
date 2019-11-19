@@ -745,6 +745,9 @@ elif methodType == "LOESS":
     data = load_data_df(1, selectedExp)
     #trainData, testData = devide_data(data)
     # comb
+    # polyfitData = data_polyfit(data)
+    # fftData = data_FFT(data)
+    # movingAvgData = moving_average(data)
     numOfExp = len(data)
     numExpForTrain = math.floor(numOfExp*0.75)
     expIdx = range(0, numOfExp - 1)
