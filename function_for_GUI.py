@@ -194,10 +194,11 @@ def devide_data_comb(wantedData,expIdx,trainIdx):
     #trainIdx=list([13, 16, 22, 4, 15, 27, 5, 28, 14, 23, 17, 25, 7, 20, 10, 21, 26, 11, 1, 24, 6, 30])
     testIdx = set(expIdx).difference(trainIdx)
     testIdx=list(testIdx)
-    trainIdx.extend(testIdx[:2])
-    testIdx.extend(trainIdx[:2])
-    trainIdx=trainIdx[2:]
-    testIdx=testIdx[2:]
+    sh=1
+    trainIdx.extend(testIdx[:sh])
+    testIdx.extend(trainIdx[:sh])
+    trainIdx=trainIdx[sh:]
+    testIdx=testIdx[sh:]
     trainData = {key: wantedData[key] for key in wantedData.keys() & [expNames[i]for i in trainIdx]}
     testData = {key: wantedData[key] for key in wantedData.keys() & [expNames[i]for i in testIdx]}
     trainData['expNames'] = [expNames[i]for i in trainIdx]

@@ -749,7 +749,7 @@ elif methodType == "LOESS":
     numExpForTrain = math.floor(numOfExp*0.75)
     expIdx = range(0, numOfExp - 1)
     trainIdx = random.sample(expIdx, numExpForTrain)
-    for comb in range (0, int(numExpForTrain/2)):
+    for comb in range (0, int(-2+numExpForTrain/1)):
         trainData,testData,trainIdx=devide_data_comb(data,expIdx,trainIdx)
         # featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, trainData)
         # featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, testData)
@@ -832,7 +832,7 @@ elif methodType == "LOESS":
         # loessModel = skmisc.loess(featuresTrainNP, titterTrainNP)
         # selectedVar = ['meanS', 'meanAmm']# The options are: ['meanDO', 'meanAmm','meanS','meanpH','meanAgi','meanAmmFeed', 'Time dextrose low' 'Time']
 
-        if isRunCombos:
+        if isRunCombos:# comptition of diffrent FF
             featuresOptions = sum([list(map(list, combinations(selectedTypesOfFeatures, i))) for i in range(len(selectedTypesOfFeatures) + 1)],
                 [])
             featuresOptions = featuresOptions[1:]
@@ -841,6 +841,7 @@ elif methodType == "LOESS":
             R_filterOptions = R_filterOptions[1:]
             if comb==0:
                  meanErrMat = np.zeros([len(featuresOptions), len(R_filterOptions)])
+            z_smoot_test = np.empty([featuresTestNP.shape[0],len(featuresOptions), len(R_filterOptions)])
             idxFeat = -1
             for featOpt in featuresOptions:
                 idxFeat += 1
@@ -867,22 +868,20 @@ elif methodType == "LOESS":
                 # firstVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()
                 # secondVarTestNP = FeatureTestProcessed[selectedTypesOfFeatures[1]].to_numpy()
                     titterTestNP = resultsTestProcessed['Titter'].to_numpy()
-                    z_smoot_test = np.empty(VartestNP.shape[0])
+
                     # nd
                     X = VarNP
 
-                    for i11 in range(len(z_smoot_test)):
+                    for i11 in range((z_smoot_test.shape[0])):
                         X_test = VartestNP[i11, :]
                         X_filter_test = VarfiltertestNP[i11, :]
                         zout1, wout = loess_nd_test_point(VarNP, VarfilterNP, titterTrainNP, X_test, X_filter_test,
                                                           titterTestNP[i11],
                                                           frac=fractionMinVal, degree=deg, rescale=False)
-                        z_smoot_test[i11] = zout1
+                        z_smoot_test[i11,idxFeat, idxFilt] = zout1
 
-                    meanErrMat[idxFeat, idxFilt] = meanErrMat[idxFeat, idxFilt]+ np.mean(np.abs((z_smoot_test-titterTestNP)/(titterTestNP+z_smoot_test)))
-                    minimalIdx = np.unravel_index(np.argmin(meanErrMat, axis=None), meanErrMat.shape)
-                    bestFeatureCombo = featuresOptions[minimalIdx[0]]
-                    bestFilterCombo = R_filterOptions[minimalIdx[1]]
+                    meanErrMat[idxFeat, idxFilt] = meanErrMat[idxFeat, idxFilt]+np.mean(np.abs((z_smoot_test[:,idxFeat, idxFilt]-titterTestNP)/(titterTestNP+z_smoot_test[:,idxFeat, idxFilt])))
+
 
         else:
             if comb==0:
@@ -919,17 +918,24 @@ elif methodType == "LOESS":
                                                   frac=fractionMinVal, degree=deg, rescale=False)
                 z_smoot_test[i11] = zout1
             meanErrMat[0, 0] = meanErrMat[0, 0]+ np.mean(np.abs((z_smoot_test-titterTestNP)/(titterTestNP+z_smoot_test)))
-            minimalIdx =[0, 0]#np.unravel_index(np.argmin(meanErrMat, axis=None), meanErrMat.shape)
-            bestFeatureCombo = selectedTypesOfFeatures
-            bestFilterCombo = selectedTypesOfR_filter
 
+    if isRunCombos:# comptition of diffrent FF
+        minimalIdx = np.unravel_index(np.argmin(meanErrMat, axis=None), meanErrMat.shape)
+        bestFeatureCombo = featuresOptions[minimalIdx[0]]
+        bestFilterCombo = R_filterOptions[minimalIdx[1]]
+        z_smoot_test_min=z_smoot_test[:,minimalIdx[0],minimalIdx[1]]
+    else:
+        minimalIdx =[0, 0]#np.unravel_index(np.argmin(meanErrMat, axis=None), meanErrMat.shape)
+        bestFeatureCombo = selectedTypesOfFeatures
+        bestFilterCombo = selectedTypesOfR_filter
+        z_smoot_test_min=z_smoot_test[:,minimalIdx[0],minimalIdx[1]]
     k_s = 0
     for z1 in range(len(ind_new_exp) - 1):
         if ind_new_exp[z1] <= 0:
             # f1,ax=plt.figure();
             fig, ax = plt.subplots()
             h1, = ax.plot(t1[k_s:z1 + 1], titterTestNP[k_s:z1 + 1], 'ro', label='Data'),
-            h2, = ax.plot(t1[k_s:z1 + 1], z_smoot_test[k_s:z1 + 1], 'bo', label='predict')
+            h2, = ax.plot(t1[k_s:z1 + 1], z_smoot_test_min[k_s:z1 + 1], 'bo', label='predict')
             annotation_string = r"features= %s" % (bestFeatureCombo)
             annotation_string += "\n"
             annotation_string += r"distance filter= %s" % (bestFilterCombo)
