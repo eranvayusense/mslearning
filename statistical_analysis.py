@@ -928,7 +928,7 @@ elif methodType == "LOESS":
         minimalIdx =[0, 0]#np.unravel_index(np.argmin(meanErrMat, axis=None), meanErrMat.shape)
         bestFeatureCombo = selectedTypesOfFeatures
         bestFilterCombo = selectedTypesOfR_filter
-        z_smoot_test_min=z_smoot_test[:,minimalIdx[0],minimalIdx[1]]
+        z_smoot_test_min=z_smoot_test
     k_s = 0
     for z1 in range(len(ind_new_exp) - 1):
         if ind_new_exp[z1] <= 0:
