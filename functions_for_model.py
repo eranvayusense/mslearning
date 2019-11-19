@@ -3,7 +3,7 @@ def set_initial_constants_and_settings():#(MeasStruct):
     #%% Set settings
     Settings={'nConfig':1,'nConfigPerIter':1,'DT':1/60,# length of step [hours]
     'AmmoniaStableTime':120,# time for ammonia concentration to stabilize on a new value
-    'SelectedCase':'26'}
+    'SelectedCase':'28'}
 
     
     #%% Set Constants values
@@ -35,20 +35,20 @@ def set_initial_constants_and_settings():#(MeasStruct):
 
     #%% Set Initial conditions values
     Vl_0=80
-    # InitialCond={'X_0':0.15,#; %Initial biomass concentration [pF/cm] currently from incyte measurements and units
-    # 'Vl_0':Vl_0,#;%liquid volume [l] for R&D and [m^3] for production -TO BE TAKEN FROM MEASUREMENTS!!
-    # 'gas_V':Constants['TOTAL_VOLUME']-Vl_0,#;%gas volume in fermentor [l] for R&D and [m^3] for production
+    InitialCond={'X_0':0.15,#; %Initial biomass concentration [pF/cm] currently from incyte measurements and units
+     'Vl_0':Vl_0,#;%liquid volume [l] for R&D and [m^3] for production -TO BE TAKEN FROM MEASUREMENTS!!
+     'gas_V':Constants['TOTAL_VOLUME']-Vl_0,#;%gas volume in fermentor [l] for R&D and [m^3] for production
     # #%params.S_0=64.5;%initial dextrose concentration[g/l]
-    # 'DO_0':MeasStruct['DO'][1],#;% initial dissolved oxygen concentration-TO BE TAKEN FROM MEASUREMENTS!!
+     'DO_0':Constants['DO_MAX'],#;% initial dissolved oxygen concentration-TO BE TAKEN FROM MEASUREMENTS!!
     # # % if isempty(MeasStruct.AConcen(end))
     # # %     InitialCond.A_0=savedData.A;% initial amonia concentration-TO BE TAKEN FROM MEASUREMENTS!!
     # # % else
     # # %     InitialCond.A_0=MeasStruct.AConcen(1);
     # # % end
-    # 'A_0':MeasStruct['AConcen'][1],
-    # 'P1_0':0,#;%initial tobramycin weight
-    # 'S_0':60,
+     'A_0':0,
+     'P1_0':0,#;%initial tobramycin weight
+     'P2_0':0}
     # 'CO2_0':0,#;%initial CO2 concentration [%]
     # 'SoybeanOil':30,#;%concentration [%] of soybean oil
     # 'nSteps':MeasStruct['Time'][-1]}
-    return Settings# InitialCond,Settings,Constants
+    return Settings, InitialCond,Constants
