@@ -4,6 +4,7 @@ import random
 from read_data import read_data
 import pickle
 from function_for_GUI import *
+from function_for_smoothing import *
 import itertools
 from tkinter import *
 import matplotlib.pyplot as plt
