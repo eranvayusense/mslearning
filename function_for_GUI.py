@@ -1000,3 +1000,4 @@ def polyfit_nd(X, z, degree, sigz=None, weights=None):
     coeff = np.linalg.lstsq(a, z*sw, rcond=None)[0]
 
     return c.dot(coeff)
+

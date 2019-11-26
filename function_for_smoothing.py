@@ -1,4 +1,35 @@
-def data_polyfit(data,var,deg_s, deg_e):
+def smooth_data(data):
+    import pandas as pd
+    import numpy as np
+    # from function_for_GUI import *
+    smoothedData = {}
+    for exp in data.keys():
+        smoothedData[exp] = pd.DataFrame()
+        for var in data[exp].columns:
+            varData = data[exp][var]
+            if var == 'Tobramycin':
+                smoothedData[exp][var] = moovin_avg_var(varData, 2, isNumWindows=True)
+            elif var == 'Temp':
+                smoothedData[exp][var] = polyfit_var(varData, 5)
+            elif var == 'Airflow':
+                smoothedData[exp][var] = moovin_avg_var(varData, 40)
+            elif var == 'Agitation':
+                # smoothedData[exp][var] = moovin_avg_var(varData, 60)
+                smoothedData[exp][var] = data[exp][var]
+            elif var == 'pH_x':
+                smoothedData[exp][var] = moovin_avg_var(varData, 60)
+            elif var == 'DO':
+                smoothedData[exp][var] = moovin_avg_var(varData, 60)
+            elif var == 'PCV':
+                smoothedData[exp][var] = polyfit_var(varData, 4)
+            elif var == 'Kanamycin':
+                smoothedData[exp][var] = moovin_avg_var(varData, 2, isNumWindows=True)
+            else:
+                smoothedData[exp][var] = data[exp][var]
+    return smoothedData
+
+
+def data_polyfit(data, var, deg_s, deg_e):
     import pandas as pd
     import numpy as np
     import matplotlib.pyplot as plt
@@ -117,3 +148,28 @@ q=2
             # elif var == 'S':
             #     varCoef = np.polyfit(data[exp].index.values, data[exp][var].to_numpy, 4)
             #     filtData[exp][var] = np.polyval(varCoef, data[exp].index.values)
+def moovin_avg_var(data, numOfParts, isNumWindows=False):
+    import pandas as pd
+    import numpy as np
+    smoothVarData = np.nan * np.ones(shape=len(data))
+    notNanVal = np.invert(np.isnan(data.to_numpy()))
+    # notNanVal = pd.Series(notNanVal)
+    relevantDataNP = data.to_numpy()[notNanVal]
+    if isNumWindows:
+        winLength = numOfParts
+    else:
+        winLength = int(round(sum(notNanVal) / numOfParts))
+    movingavgVarData = pd.DataFrame(relevantDataNP).rolling(winLength).mean()
+    movingavgVarData[0][0:winLength - 1] = relevantDataNP[0:winLength - 1]
+    smoothVarData[notNanVal] = movingavgVarData.to_numpy().transpose()[0]
+    return smoothVarData
+
+def polyfit_var(data, deg):
+    import pandas as pd
+    import numpy as np
+    smoothVarData = np.nan * np.ones(shape=len(data))
+    notNanVal = np.invert(np.isnan(data.to_numpy()))
+    varCoef = np.polyfit(data.index.values[notNanVal], data.to_numpy()[notNanVal], deg)
+    polyfit = np.polyval(varCoef, data.index.values[notNanVal])
+    smoothVarData[notNanVal] = polyfit
+    return smoothVarData

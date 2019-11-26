@@ -746,17 +746,18 @@ elif methodType == "LOESS":
     data = load_data_df(1, selectedExp)
     #trainData, testData = devide_data(data)
     # comb
-    var=data[list(data.keys())[0]].columns[5]
-    polyfitData = data_polyfit(data,var,3,7)
+    var = data[list(data.keys())[0]].columns[5]
+    # polyfitData = data_polyfit(data, var, 3, 7)
+    dataSmoothed = smooth_data(data)
     # fftData = data_FFT(data)
-    len1=data[list(data.keys())[0]].values.shape[0]
+    # len1=data[list(data.keys())[0]].values.shape[0]
   #  movingAvgData = moving_average(data,var,len1)
-    numOfExp = len(data)
+    numOfExp = len(dataSmoothed)
     numExpForTrain = math.floor(numOfExp*0.75)
     expIdx = range(0, numOfExp - 1)
     trainIdx = random.sample(expIdx, numExpForTrain)
-    for comb in range (0, int(-2+numExpForTrain/1)):
-        trainData,testData,trainIdx=devide_data_comb(data,expIdx,trainIdx)
+    for comb in range(0, int(-2+numExpForTrain/1)):
+        trainData, testData, trainIdx = devide_data_comb(data, expIdx, trainIdx)
         # featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, trainData)
         # featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, testData)
         featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(typesOfFeatures, trainData)
@@ -891,7 +892,7 @@ elif methodType == "LOESS":
 
         else:
             if comb==0:
-                 meanErrMat = np.zeros([1,1])
+                 meanErrMat = np.zeros([1, 1])
             VarNP = np.empty((len(FeatureTrainProcessed[selectedTypesOfFeatures[0]].to_numpy()), len(selectedTypesOfFeatures)))
             VartestNP = np.empty(
                 (len(FeatureTestProcessed[selectedTypesOfFeatures[0]].to_numpy()), len(selectedTypesOfFeatures)))
@@ -952,7 +953,7 @@ elif methodType == "LOESS":
 
             plt.title(annotation_string)
             # ax.axis('equal')
-            leg = ax.legend();
+            leg = ax.legend()
             plt.xlabel('Time')
             plt.grid
             plt.ylabel('dp/dt')
@@ -977,7 +978,7 @@ elif methodType == "LOESS":
             h2, = ax.plot(t1[k_s:z1 + 1], z_smoot_test[k_s:z1 + 1], 'bo', label='predict')
             plt.title(list(['std=', featureNames]))
             # ax.axis('equal')
-            leg = ax.legend();
+            leg = ax.legend()
             # plt.xlabel(selectedTypesOfFeatures[0])
             plt.ylabel('dp/dt')
             k_s = z1 + 1
