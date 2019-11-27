@@ -43,16 +43,16 @@ interpWantedData = load_data_df(0, experimentsOptions)
 
 trainData, testData = devide_data(interpWantedData)
 del interpWantedData
-paramMat,isExpVec,paramsNames=mat_creater_random_co2_only(Settings.nConfig)
-for iExp in range (1,len(trainData)):
-    for iBatch in range 1,np.floor(Settings.nConfig/Settings.nConfigPerIter):
+lenT=trainData[list(trainData.keys())[0]].shape[0]
+paramMat,isExpVec,paramsNames=mat_creater_random_co2_only(Settings['nConfig'],0)
+for iExp in np.arange (1,len(trainData)):
+    for iBatch in np.arange(1,np.floor(Settings['nConfig']/Settings['nConfigPerIter'])):
         #%find relevant configurations
-        firstConfig=(iBatch-1)*Settings.nConfigPerIter+1 #%first configuration for this batch
-        lastConfig=iBatch*Settings.nConfigPerIter#;% last configuration for this batch
+        firstConfig=(iBatch-1)*Settings['nConfigPerIter']+1 #%first configuration for this batch
+        lastConfig=iBatch*Settings['nConfigPerIter']#;% last configuration for this batch
         params=loadParams(firstConfig,lastConfig,paramMat);
         # %% run simulation and find golden score
-        goldenScoreVec[firstConfig:lastConfig],Xmedian[firstConfig:lastConfig]=
-            find_golden_score(params,ImportedData{iExp},Settings,InitialCond,Constants);
+        goldenScoreVec[firstConfig:lastConfig],Xmedian[firstConfig:lastConfig]= find_golden_score(lenT,params,trainData[list(trainData.keys())[iExp]],Settings,InitialCond,Constants);
 
 #VayuDataTrial,RefExpNumTrial,VayuDataTest,RefExpNumTest=devide_data(Settings);
 
