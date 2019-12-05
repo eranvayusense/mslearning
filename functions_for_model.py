@@ -276,7 +276,7 @@ def  growth_stage(Settings,InitialCond,ImportedData,params,Constants):
    # PH[0]=ImportedData['PH'][0]
     X=InitialCond['X_0']*np.ones([nConfig,params['nSteps']])#;%biomass concentration vector
     V=InitialCond['Vl_0']*np.ones([nConfig,params['nSteps']])#;%vloume vector
-    S=ImportedData['S'][0]*np.ones([nConfig,params['nSteps']])#;%dextrose concentration vector
+    S=10*ImportedData['S'][0]*np.ones([nConfig,params['nSteps']])#;%dextrose concentration vector
     DO=Constants['DO_MAX']*ImportedData['DO'][0]/100**np.ones([nConfig,params['nSteps']])#;%oxygen concentration vector
     A=ImportedData['A'][0]*np.ones([nConfig,params['nSteps']]);
     P1=InitialCond['P1_0']*np.ones([nConfig,params['nSteps']])#;%tobramycin concentration vector
@@ -293,6 +293,20 @@ def  growth_stage(Settings,InitialCond,ImportedData,params,Constants):
 def prod_stage_bilder(GrowthData,InitialCond,ImportedData,params,Constants,Settings):
     import numpy.ma as ma
     import numpy as np
+    import scipy.io
+    matF=r'C:\Users\Admin\VAYU Sense AG\VAYU ltd - Documents\R&D\algo 7.2\tobramycin modeling\simulation upgrade results\14-Jul-2019 14_55_35 params xmin fromMoti model number 28.mat'
+
+    param_config = scipy.io.loadmat(matF)
+    params['mu_x']=param_config['xMin'][0,0];params['K_x']=param_config['xMin'][0,1];params['Y_xs']=param_config['xMin'][0,2];
+    params['m_x']=param_config['xMin'][0,3];params['K_ox']=param_config['xMin'][0,4];params['Y_xo']=param_config['xMin'][0,5];
+    params['m_o']=param_config['xMin'][0,6];params['K_la']=param_config['xMin'][0,7];params['mu_p']=param_config['xMin'][0,8];
+    params['K_I']=param_config['xMin'][0,9];params['K_p']=param_config['xMin'][0,10];params['K_op']=param_config['xMin'][0,11];
+    params['Y_ps']=param_config['xMin'][0,12];params['ypa']=param_config['xMin'][0,13];params['Y_po']=param_config['xMin'][0,14];
+    params['K']=param_config['xMin'][0,15];params['K_d']=param_config['xMin'][0,16];params['kxa']=param_config['xMin'][0,17];
+    params['yxa']=param_config['xMin'][0,18];params['K_ps2']=param_config['xMin'][0,19];params['kph']=param_config['xMin'][0,20];
+    params['a']=param_config['xMin'][0,21];params['b']=param_config['xMin'][0,22];params['C']=param_config['xMin'][0,23];
+    params['yc']=param_config['xMin'][0,24];params['kinhib']=param_config['xMin'][0,25];params['kaph']=param_config['xMin'][0,26];
+    params['gamm']=param_config['xMin'][0,27];params['oil']=param_config['xMin'][0,28];params['oilfe']=param_config['xMin'][0,29];
 #%a function which calculates the relevant variables values during the
 #%production stage according to data feeding/conditions data from experiment and a vector of paraeters.
 #%the output is a struct where each variable has one set of modeled values
@@ -319,90 +333,93 @@ def prod_stage_bilder(GrowthData,InitialCond,ImportedData,params,Constants,Setti
     oilUptakeDelay=Constants['OIL_UPTAKE_DELAY']/Settings['DT'];
     isDexLow=np.zeros([len(params['oil_feed_time']),1]);
     C=np.ones([len(params['oil_feed_time']),params['nSteps']]);
+    ImportedData['airFlowVVM']=ImportedData['Airflow']
     for t in np.arange(1,params['nSteps']):
         mask1= isDexLow==0 * S[:,t-1]<5
-        relRows=np.nonzero(mask1);
-        for idx in relRows:
-             isDexLow[relRows]=1;
-             relFeedingIdx=np.arange(t+oilUptakeDelay,t+oilUptakeDelay+params['oil_feed_time'][idx])#;%period of soybean oil feeding
-#%                 norm_feeding_bell=new_bell(relFeedingIdx,length(relFeedingIdx)/0.5,...
-#%                 0.1,t+oilUptakeDelay+(params.oil_feed_time(idx)/2));% normalized sigmoid value for feeding
-             c1=t+oilUptakeDelay+(params['oil_feed_time'][idx]/2);
-             sig=params['oil_feed_time'][idx]/4;
-             norm_feeding_bell=np.exp(-((relFeedingIdx-c1)/sig)**2);
-             sum_norm_feeding_bell=np.sum([norm_feeding_bell], axis=1);
-             feeding_bell=norm_feeding_bell*InitialCond['SoybeanOil']/sum_norm_feeding_bell;
-             ind2=np.nonzero(relFeedingIdx<=params['nSteps'])
-             soyBeanFeedMat[idx,np.int64(np.take(relFeedingIdx,ind2))]=feeding_bell[relFeedingIdx<=params['nSteps']]*params['oil_utility'][idx]
-             soyBeanFeedMat[idx,np.int64(np.take(relFeedingIdx,ind2))]=0;
-             relDepressionIdx=np.arange(t,t+oilUptakeDelay);
-             recoveringIdx=np.arange(t+oilUptakeDelay,params['nSteps']);
-    #%                 tau=t+oilUptakeDelay;
-             tau=c1;
-             C[idx,np.int64(relDepressionIdx)]=params['oil_utility'][idx];
-             C[idx,np.int64(recoveringIdx)]=1-(1-params['oil_utility'][idx])*np.exp(-((recoveringIdx-(t+oilUptakeDelay))/(tau-(t+oilUptakeDelay))));
+        relRows=np.nonzero(1*mask1);
+        for idx in np.arange(0,len(mask1)):
+            if mask1[idx]:
+                 isDexLow[relRows]=1;
+                 relFeedingIdx=np.arange(t+oilUptakeDelay,t+oilUptakeDelay+params['oil_feed_time'][idx])#;%period of soybean oil feeding
+    #%                 norm_feeding_bell=new_bell(relFeedingIdx,length(relFeedingIdx)/0.5,...
+    #%                 0.1,t+oilUptakeDelay+(params.oil_feed_time(idx)/2));% normalized sigmoid value for feeding
+                 c1=t+oilUptakeDelay+(params['oil_feed_time'][idx]/2);
+                 sig=params['oil_feed_time'][idx]/4;
+                 norm_feeding_bell=np.exp(-((relFeedingIdx-c1)/sig)**2);
+                 sum_norm_feeding_bell=np.sum([norm_feeding_bell], axis=1);
+                 feeding_bell=norm_feeding_bell*InitialCond['SoybeanOil']/sum_norm_feeding_bell;
+                 ind2=np.nonzero(relFeedingIdx<=params['nSteps'])
+                 soyBeanFeedMat[idx,np.int64(np.take(relFeedingIdx,ind2))]=feeding_bell[relFeedingIdx<=params['nSteps']]*params['oil_utility'][idx]
+                 soyBeanFeedMat[idx,np.int64(np.take(relFeedingIdx,ind2))]=0;
+                 relDepressionIdx=np.arange(t,t+oilUptakeDelay);
+                 recoveringIdx=np.arange(t+oilUptakeDelay,params['nSteps']);
+        #%                 tau=t+oilUptakeDelay;
+                 tau=c1;
+                 C[idx,np.int64(relDepressionIdx)]=params['oil_utility'][idx];
+                 C[idx,np.int64(recoveringIdx)]=1-(1-params['oil_utility'][idx])*np.exp(-((recoveringIdx-(t+oilUptakeDelay))/(tau-(t+oilUptakeDelay))));
         rel_mo=params['m_o']*C[:,t]
         rel_mx=params['m_x']*C[:,t];
         div=np.sqrt(params['K_I']*params['K_ps2'])/(params['K_I']+(np.sqrt(params['K_I']*params['K_ps2']))+
-                (np.sqrt(params['K_I']*params['K_ps2']))**2/params['K_ps2']);
-        norm_mich_ment=(S[:,t-1]/(params['K_I']+S[:,t-1])+      (S[:,t-1]**2/params['K_ps2']))/div;
+                                        ((np.sqrt(params['K_I']*params['K_ps2']))**2)/params['K_ps2']);
+        norm_mich_ment=(S[:,t-1]/(params['K_I']+S[:,t-1]+(S[:,t-1]**2/params['K_ps2'])))/div;
         norm_mich_ment_oil=(SOil[:,t-1]/(params['K_I']+SOil[:,t-1]+
                 (SOil[:,t-1]**2/params['K_ps2'])))/div;
         mu[:,t]=C[:,t]*params['mu_x']*(S[:,t-1]/(params['K_x']+S[:,t-1]))*(DO[:,t-1]/(params['K_ox']+DO[:,t-1]))*(A[:,t-1]/(params['K_xa']+A[:,t-1])) #...%Dissolved oxygen part of Michaelis Menten
                 #;%Ammonia part of Michaelis Menten[1/h]
         alpha1=4e-4
         ag05=290;
-        mu_ag[:,t]=1./(1+np.exp(alpha1*ag05*(ImportedData['Agitation'][t]-ag05)));
+        mu_ag[:,t]=1/(1+np.exp(alpha1*ag05*(ImportedData['Agitation'][t]-ag05)));
         mu_pp[:,t]=C[:,t]*params['mu_p']*(A[:,t-1]/(params['K_p']+A[:,t-1]))* (DO[:,t-1]/(DO[:,t-1]+params['K_op']))* norm_mich_ment#;%Dextrose part of Michaelis Menten
         mu_pp[:,t]=mu_pp[:,t]*mu_ag[:,t];
         mu_pp_oil[:,t]=C[:,t]*params['mu_p']*(A[:,t-1]/(params['K_p']+A[:,t-1]))* (DO[:,t-1]/(DO[:,t-1]+params['K_op']))*norm_mich_ment_oil;#%Dextrose part of Michaelis Menten
         mu_pp_oil[:,t]=mu_pp_oil[:,t]*mu_ag[:,t];
-        m_xOil=rel_mx*SOil[:,t-1]/(S[:,t-1]+SOil[:,t-1]);
+        m_xOil=0#rel_mx*SOil[:,t-1]/(S[:,t-1]+SOil[:,t-1]);
         m_xDex=rel_mx*S[:,t-1]/(S[:,t-1]+SOil[:,t-1]);
         minusSOil=Settings['DT']*X[:,t-1]*(mu_pp_oil[:,t]/params['Y_ps']+m_xOil);
-        plusSOil=SOil[:,t-1]+soyBeanFeedMat[:,t];
+        plusSOil=0#SOil[:,t-1]+soyBeanFeedMat[:,t];
         isOverDraft=np.nonzero(minusSOil>plusSOil);
         coefOil=0#np.ones([len(params['K_x']),1]);
         #coefOil[isOverDraft]=plusSOil[isOverDraft]/minusSOil[isOverDraft];
-        #SOil[:,t]=SOil[:,t-1]+soyBeanFeedMat[:,t]-Settings['DT']*X[:,t-1]*coefOil*(mu_pp_oil[:,t]/params['Y_ps']+m_xOil);
-        plusDO=DO[:,t-1]+Settings['DT']*(params['K_la']*((ImportedData['Agitation'][t]/(Constants['AGI_REF_VAL']**2)* (ImportedData['airFlowVVM'][:,t]/Constants['AF_REF_VAL']))*(Constants['DO_MAX']-DO[:,t-1])));
+        SOil[:,t]=0#SOil[:,t-1]+soyBeanFeedMat[:,t]-Settings['DT']*X[:,t-1]*coefOil*(mu_pp_oil[:,t]/params['Y_ps']+m_xOil);
+        plusDO=DO[:,t-1]+Settings['DT']*(params['K_la']*((ImportedData['Agitation'][t]/(Constants['AGI_REF_VAL']**2)* (ImportedData['airFlowVVM'][t]/Constants['AF_REF_VAL']))*(Constants['DO_MAX']-DO[:,t-1])));
         minusDO=Settings['DT']*(X[:,t-1]*((mu[:,t]/params['Y_xo'])+
                 rel_mo+(mu_pp[:,t]+mu_pp_oil[:,t])/params['Y_po']))
         DOCoef=(plusDO-(Constants['DO_MAX']/25))/minusDO;
-        plusS=S[:,t-1]+Settings['DT']*(ImportedData['F_s'][:,t]/V);
+        plusS=S[:,t-1]+Settings['DT']*(ImportedData['Fs'][t]/V);
         minusS=Settings['DT']*(X[:,t-1]*((mu[:,t]/params['Y_xs'])+m_xDex+mu_pp[:,t]/params['Y_ps']));
         SCoef=(plusS-0.1)/minusS;
-        reductionCoef=np.min(DOCoef,SCoef);
+        reductionCoef=np.ones([len(DOCoef),1])*(np.min([DOCoef,SCoef]))
         naturalS=S[:,t-1]+Settings['DT']*(-X[:,t-1]* ((mu[:,t]/params['Y_xs'])+m_xDex+
-                mu_pp[:,t]/params['Y_ps'])+ImportedData['F_s'][:,t]/V);
+                mu_pp[:,t]/params['Y_ps'])+ImportedData['Fs'][t]/V);
         coefS=S[:,t-1]+Settings['DT']*(-X[:,t-1]*reductionCoef* ((mu[:,t]/params['Y_xs'])+m_xDex+
-                mu_pp[:,t]/params['Y_ps'])+ImportedData['F_s'][:,t]/V);
+                mu_pp[:,t]/params['Y_ps'])+ImportedData['Fs'][t]/V);
         naturalDO=DO[:,t-1]+Settings['DT']*(X[:,t-1]*
                 (-(mu[:,t]/params['Y_xo'])-rel_mo-(mu_pp[:,t]+mu_pp_oil[:,t])/params['Y_po'])+params['K_la']*
-                ((ImportedData['Agitation'][:,t]/ImportedData['AGI_REF_VAL'])**2.*
-                (ImportedData['airFlowVVM'][:,t]/Constants['AF_REF_VAL']))*(Constants['DO_MAX']-DO[:,t-1]));
+                ((ImportedData['Agitation'][t]/Constants['AGI_REF_VAL'])**2*
+                (ImportedData['airFlowVVM'][t]/Constants['AF_REF_VAL']))*(Constants['DO_MAX']-DO[:,t-1]));
         coefDO=DO[:,t-1]+Settings['DT']*(X[:,t-1]*reductionCoef*
                 (-(mu[:,t]/params['Y_xo'])-rel_mo-(mu_pp[:,t]+mu_pp_oil[:,t])/params['Y_po'])+params['K_la']*
-                ((ImportedData['Agitation'][:,t]/ImportedData['AGI_REF_VAL'])**2.*
-                (ImportedData['airFlowVVM'][:,t]/Constants['AF_REF_VAL']))*(Constants['DO_MAX']-DO[:,t-1]));
-        isCoef=coefS>naturalS | coefDO>naturalDO;
+                ((ImportedData['Agitation'][t]/Constants['AGI_REF_VAL'])**2*
+                (ImportedData['airFlowVVM'][t]/Constants['AF_REF_VAL']))*(Constants['DO_MAX']-DO[:,t-1]));
+        isCoef=(coefS>naturalS) + (coefDO>naturalDO);
         S[:,t]=naturalS;
-        S[np.where(isCoef),t]=coefS[np.where(isCoef)];
+        S[np.nonzero(isCoef),t]=coefS[np.nonzero(isCoef)];
         DO[:,t]=naturalDO;
-        DO[np.where(isCoef),t]=coefDO[np.where(isCoef)];
-        DO[:,t]=np.min(Constants['DO_MAX'],DO[:,t]);
-        Coef=np.ones(len(naturalDO),1);
-        Coef[np.where(isCoef)]=reductionCoef[np.where(isCoef)];
-        X[:,t]=X[:,t-1]+Settings['DT']*X[:,t-1]*                (Coef*mu[:,t]-params['K_d']*A[:,t-1]);
-        P1[:,t]=np.max(0,P1[:,t-1]+Settings['DT']*
-                ((Coef*mu_pp[:,t]+coefOil*mu_pp_oil[:,t])*X[:,t-1]-params['K']*P1[:,t-1]))#;%in [g/l]
-        A[:,t]=ImportedData['A'][:,t]
+        DO[np.nonzero(isCoef),t]=coefDO[np.nonzero(isCoef)];
+        DO[:,t]=np.min([Constants['DO_MAX'],DO[:,t]]);
+        Coef=np.ones([len(naturalDO),1]);
+        #if 1*isCoef:
+        Coef[np.nonzero(1*isCoef)]=reductionCoef[np.nonzero(1*isCoef)];
+        X[:,t]=X[:,t-1]+Settings['DT']*X[:,t-1]*(Coef*mu[:,t]-params['K_d']*A[:,t-1]);
+        P1[:,t]=np.max([0,P1[:,t-1]+Settings['DT']*
+                ((Coef*mu_pp[:,t]+coefOil*mu_pp_oil[:,t])*X[:,t-1]-params['K']*P1[:,t-1])])#;%in [g/l]
+        A[:,t]=ImportedData['A'][t]
 
-        DOPercent=DO*100/Constants['DO_MAX']
+    DOPercent=DO*100/Constants['DO_MAX']
         #%% creation of a struct containing all of the data.
-        ProdData=dict({'X', X, 'V', V, 'S', S, 'DO', DO, 'A', A, 'P1', P1,'P2',
+    ProdData=dict({'X', X, 'V', V, 'S', S, 'DO', DO, 'A', A, 'P1', P1,'P2',
            'mu', mu,
-           'DOPercent',DOPercent,'mu_pp',mu_pp,'PH',PH,'mu_pp_oil',mu_pp_oil});
+           'DOPercent',DOPercent,'mu_pp',mu_pp,'mu_pp_oil',mu_pp_oil})#;'PH',PH
 
 
 

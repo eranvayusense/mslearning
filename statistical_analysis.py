@@ -753,11 +753,11 @@ elif methodType == "LOESS":
     # len1=data[list(data.keys())[0]].values.shape[0]
   #  movingAvgData = moving_average(data,var,len1)
     numOfExp = len(dataSmoothed)
-    numExpForTrain = math.floor(numOfExp*0.75)
+    numExpForTrain = math.floor(numOfExp*0.70)
     expIdx = range(0, numOfExp - 1)
     trainIdx = random.sample(expIdx, numExpForTrain)
-    for comb in range(0, int(-2+numExpForTrain/1)):
-        trainData, testData, trainIdx = devide_data_comb(data, expIdx, trainIdx)
+    for comb in range(0, int(-2+numExpForTrain/2)):
+        trainData, testData, trainIdx = devide_data_comb(dataSmoothed, expIdx, trainIdx)
         # featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, trainData)
         # featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, testData)
         featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(typesOfFeatures, trainData)
