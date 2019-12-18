@@ -151,12 +151,12 @@ def data_interp_df(data, selectedExp):
         #npInterpData = interpData[exp].to_numpy()
 
         # interpData[exp].index = interpData[exp].index.astype(int)
-        for time in range(0,int(interpData[exp].index[-1])):
+        for time in range(0, int(interpData[exp].index[-1])):
             abs_sub = abs(time - interpData[exp].index.to_numpy())
             min_idx = np.array([np.where(abs_sub == np.amin(abs_sub))[0][0]])
             if time == 0:
                 nextRow = interpData[exp].loc[interpData[exp].index[min_idx]]
-                nextRow.rename(index = {nextRow.index[0]:time}, inplace=True)
+                nextRow.rename(index={nextRow.index[0]:time}, inplace=True)
                 interpDataOrginized[exp] = nextRow
             else:
                 nextRow = interpData[exp].loc[interpData[exp].index[min_idx]]
@@ -236,7 +236,7 @@ def simulation_initialization():
     InitCond['P1_0'] = 0
 
     #return values
-    return Settings,Const,InitCond
+    return Settings, Const, InitCond
 
 
 def set_initial_conditions(expData, Const):
