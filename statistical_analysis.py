@@ -96,7 +96,7 @@ expText = Label(master, text='choose relevant experiments:', font=('Helvetica', 
 expText.grid(row=3, column=1, sticky=E, padx=10)
 scroll = Scrollbar(master)
 scroll.grid(row=3, column=3)
-expListbox = Listbox(master, selectmode='multiple')
+expListbox = Listbox(master, selectmode='multiple', height=6)
 expListbox.grid(row=3, column=2)
 expListbox.config(yscrollcommand=scroll.set)
 scroll.config(command=expListbox.yview)
@@ -748,7 +748,7 @@ elif methodType == "LOESS":
     # comb
     var = data[list(data.keys())[0]].columns[5]
     # polyfitData = data_polyfit(data, var, 3, 7)
-    dataSmoothed = smooth_data(data)
+    dataSmoothed = filter_data(data)
     # fftData = data_FFT(data)
     # len1=data[list(data.keys())[0]].values.shape[0]
   #  movingAvgData = moving_average(data,var,len1)
@@ -757,7 +757,7 @@ elif methodType == "LOESS":
     expIdx = range(0, numOfExp - 1)
     trainIdx = random.sample(expIdx, numExpForTrain)
     for comb in range(0, int(-2+numExpForTrain/1)):
-        trainData, testData, trainIdx = devide_data_comb(data, expIdx, trainIdx)
+        trainData, testData, trainIdx = devide_data_comb(dataSmoothed, expIdx, trainIdx)
         # featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, trainData)
         # featureNames, featuresTestDF, resultsTestDF = feature_extractor_multiple_meas(selectedTypesOfFeatures, testData)
         featureNames, featuresTrainDF, resultsTrainDF = feature_extractor_multiple_meas(typesOfFeatures, trainData)
