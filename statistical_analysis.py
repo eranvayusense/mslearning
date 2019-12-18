@@ -753,7 +753,7 @@ elif methodType == "LOESS":
     # len1=data[list(data.keys())[0]].values.shape[0]
   #  movingAvgData = moving_average(data,var,len1)
     numOfExp = len(dataSmoothed)
-    numExpForTrain = math.floor(numOfExp*0.75)
+    numExpForTrain = math.floor(numOfExp*0.70)
     expIdx = range(0, numOfExp - 1)
     trainIdx = random.sample(expIdx, numExpForTrain)
     for comb in range(0, int(-2+numExpForTrain/1)):
