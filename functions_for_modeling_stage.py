@@ -216,9 +216,9 @@ def run_and_test_full_model(pref, results, trainData, interpDataPP):
                 nameVec.append(currModelNames[idx])
         currModelState = currModelStateInit.iloc[nameIdx]
 
-
+        t_end=20#modeledVars[exp].index[-1]
         # run model every time step for all modeled variables
-        for t in range(0, modeledVars[exp].index[-1], Settings['DT']):  #  start from t=1[minutes]
+        for t in range(0, t_end, Settings['DT']):  #  start from t=1[minutes]
             currModelState[pref['Data variables']] =\
                 testData[exp][pref['Data variables']].iloc[t]
             #  If featuresDist is a modeled parameter, we should not update it from data!!
@@ -237,9 +237,17 @@ def run_and_test_full_model(pref, results, trainData, interpDataPP):
                 except:
                     q=2
                 currModelState[var] = modeledVars[exp][var].iloc[t+1]
+    gold_var=gold_hyper(pref,testData,modeledVars)
     return modeledVars
-
-
+def gold_hyper(pref,testData,modeledVars):
+    gold_var={}
+    for exp in testData.keys():
+        #expLength = int(round(testData[exp]['TimeMeas'].iloc[-1])) + 1 #  Experiments length in minutes
+        gold_var[exp] = pd.DataFrame()
+        for var in pref['Variables']:
+           # modeledVarsForExp[var] = testData[exp][var].iloc[0] * np.ones([expLength, ])
+            gold_var[exp][var]=[sum(abs((testData[exp][var]-modeledVars[exp][var])/(testData[exp][var]+modeledVars[exp][var])))]
+    return gold_var
 def simulation_initialization(expData, pref):
     # Settings
     Settings = dict()
