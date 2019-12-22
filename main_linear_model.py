@@ -29,7 +29,7 @@ for variable in pref['Variables']: #Run over every modeled variable
         if variable in pref['Combinations'][paramComb]['features']:
             results[variable]['resultsVec'][paramComb] = 1e8
             continue
-        for CVOpt in pref['numCVOpt']: #'numCVOpt' is the number of train/test division options
+        for CVOpt in range(0, pref['numCVOpt']): #'numCVOpt' is the number of train/test division options
             trainData, testData, pref['CVTrain'], pref['CVTest'] = \
                 devide_data_comb(dataMeasurements, pref['CVTrain'], pref['CVTest'])
 
