@@ -171,23 +171,31 @@ def linear_model_GUI():
     return pref
     # list(data.columns)
 
-def load_data(process, preProcessing, isFilterData, relExp=0, isLoadInterpolated=1):
+def load_data(process, preProcessing, isFilterData, relExp='All', isLoadInterpolated=1):
 # Inputs:
-# 1. process- Which process is modeled ('Tobramycin')
-# 2. preProcessing- selected type of preprocessing
-# 3. isFilterData- 1 if filter data is wanted, 0 if not
-# 4. relExp(difault is 0)- list containing experiments where all selected variables for model were measured. if 0, all
-# experiments are used.
+#   1. process- Which process is modeled ('Tobramycin', 'BiondVax' etc.)
+#   2. preProcessing- selected type of preprocessing
+#   3. isFilterData- 1 if filter data is wanted, 0 if not
+#   4. relExp(difault is 'All')- list containing experiments where all selected
+#                              variables for model were measured. if 'All', all
+#                              experiments are used.
 # Outputs :
-# 1. data- a dictionary containing dataframes for relevant experiments. each data frame is for one experiment where rows are time
-# and columns are measured variables, after linear interpulation
-# 2. datapp- the same format as data, after pre process protocol according to selected type.
+#   1. interpData- a dictionary containing dataframes for relevant experiments. Each data
+#                frame represents one experiment after linear interpulation where rows
+#                are time and columns are measured variables.
+#   2. interpDataPP- the same format as data, after pre process protocol according to
+#                  selected type.
+
+    #  load interpolated of un-interpolated data and filter if wanted.
     if process == "Tobramycin":
-        fileName = 'RnD_data_interpolated_new.p'
+        if isLoadInterpolated:
+            fileName = 'RnD_data_interpolated_new.p'
+        else:
+            fileName = 'RnD_data_new.p'
         with open(fileName, 'rb') as f:
             data = pickle.load(f)
         if isFilterData:
-            data = filter_data(data, processType=process) # Activate smoothing function on data
+            data = filter_data(data, processType=process)  # Activate smoothing function on data
 
     elif process == "BiondVax":
         fileName = 'RnD_data_new.p'
@@ -196,24 +204,38 @@ def load_data(process, preProcessing, isFilterData, relExp=0, isLoadInterpolated
         if isFilterData:
             data = filter_data(data, processType=process)  # Activate smoothing function on data
 
-    if relExp==0:
+    # screen out unrelevant experiments
+    if relExp=='All':
         relExp = data.keys()
     data = {wantedExp: data[wantedExp] for wantedExp in relExp}
+
+    # If data is not interpolated, conduct interpolation
     if isLoadInterpolated:
         interpData = data
     else:
         interpData = data_interp_df(data)
+
+    # Conduct pre-processing according to wanted type
     interpDataPP = pre_process_function(interpData, preProcessing)
+
+
     return interpData, interpDataPP
 
 
 def pre_process_function(data, preProcessing):
+# Intputs :
+#   1. data (similar to interpData in "load_data")- a dictionary containing dataframes for
+#                relevant experiments. Each data frame represents one experiment after linear
+#                interpulation where rows are time and columns are measured variables.
+#   2. preProcessing- Type of preprocessing technique.
+# Outputs :
+#   1. dataPP- same format as data, after preprocessing technique activated.
     dataPP = {}
     if preProcessing == 'Standardize (Robust scalar)':
         for exp in data.keys():
             varNames = list(data[exp].columns)
-            varNames.append('Time')
-            data[exp]['Time'] = data[exp].index
+            # varNames.append('Time')
+            # data[exp]['Time'] = data[exp].index
             dataProcessed = RobustScaler().fit_transform(data[exp])
             dataPP[exp] = pd.DataFrame(dataProcessed, columns=varNames)
             varNames.append('TimeMeas')
@@ -238,14 +260,17 @@ def pre_process_function(data, preProcessing):
     return dataPP
 
 def data_interp_df(allData):
-    interpData = dict()#empty data frame
+# Inputs:
+#   1. data- a dictionary containing dataframe for each experiment
+# Outputs:
+#   1. interpDataOrginized- same structure as data, after interpolation
+#   with one minute interval
+    interpData = dict()  # empty data frame
     interpDataOrginized = dict()
     for exp in allData.keys():
         interpData[exp] = allData[exp]
         interpData[exp].index = interpData[exp].index * 60
-        #npInterpData = interpData[exp].to_numpy()
 
-        # interpData[exp].index = interpData[exp].index.astype(int)
         for time in range(0, int(interpData[exp].index[-1])):
             abs_sub = abs(time - interpData[exp].index.to_numpy())
             min_idx = np.array([np.where(abs_sub == np.amin(abs_sub))[0][0]])
@@ -259,19 +284,27 @@ def data_interp_df(allData):
                 interpDataOrginized[exp] = interpDataOrginized[exp].append(nextRow)
         interpDataOrginized[exp] =interpDataOrginized[exp].interpolate()
 
-        # interpDataOrginized[exp].rename(columns={'Dextrose[percent]': 'S', 'Ammonia[percent]': 'A', }, inplace=True)
     return interpDataOrginized
 
 def meas_creator(interpDataPP, pref):
+    # Inputs:
+    #   1. interpDataPP- a dictionary containing dataframes for relevant experiments. Each data frame represents one
+    #                   experiment after linear interpulation where rows are time and columns are measured variables.
+    #   2. pref- preferences dictionary
+    # Outputs:
+    #   1. dataMeasurements- same structure as interpDataPP, where each experiment holds mean data-frame for every hour.
+    #                        This will be used to train the linear model of each modeled variable. number of rows for
+    #                        every data frame is the length in hours of the relevant experiment.
+
     dataMeasurements = {}
     for exp in interpDataPP.keys():
-        #  = pd.DataFrame(columns=interpDataPP[exp].columns)
-        # for hour in range(30, len(interpDataPP[exp]) - 30 , 60):
+        # Run over each hour of the experiment. inside each hour, compute the average of +- 30 min for each measurement
         dataMeasurements[exp] = \
             pd.concat([pd.DataFrame([interpDataPP[exp].iloc[hour-30:hour+30].mean()],
                                     columns=interpDataPP[exp].columns)
                        for hour in range(30, len(interpDataPP[exp]) - 30, 60)],
                       ignore_index=True)
+
         # Create "dataDelta"- data frame containing the dx/dt, with units [x/hour],
         # where x are modeled variables
         dataDelta = pd.concat(
@@ -289,6 +322,11 @@ def meas_creator(interpDataPP, pref):
 
 
 def create_combinations(pref):
+# Inputs:
+#   1. pref- Preferences dictionary
+# Outputs:
+#   1. Combinations- A dictionary, containing all Hyper parameters combinations to be executed for this modeled
+#   variable. Hyper parameters could be- variables of the linear eqations, distance input, fraction etc.
     allFeatForModel = pref['Variables'] + pref['Data variables']
     featuresOptions = sum([list(map(list, combinations(allFeatForModel, i)))
                            for i in range(len(allFeatForModel) + 1)], [])
@@ -302,41 +340,46 @@ def create_combinations(pref):
     return Combinations
 
 
-def devide_data_comb(wantedData,trainNames,testNames):
-    stepSize = 1
+def devide_data_comb(dataMeasurements,trainNames,testNames):
+# Inputs:
+#   1. dataMeasurements-  A dictionary containing dataframes for relevant experiments. Each experiment holds mean data-
+#                         frame for every hour. This will be used to train the linear model of each modeled variable.
+#                         number of rows for every data frame is the length in hours of the relevant experiment.
+#   2. trainNames- Names of experiments currently selected for train data.
+#   3. testNames - Names of experiments currently selected for test data.
+# Outputs:
+#   1. trainData- Dictionary containing data frames of data for selected training experiments.
+#   2. testData- Dictionary containing data frames of data for selected test experiments.
+#   3. trainNames- Names of experiments currently selected for train data.
+#   4. testNames - Names of experiments currently selected for test data.
+    stepSize = 1 #How many experiments are moving from train to test every iteration
     trainNames.extend(testNames[:stepSize])
     testNames.extend(trainNames[:stepSize])
     trainNames = trainNames[stepSize:]
     testNames = testNames[stepSize:]
-    trainData = {exp: wantedData[exp] for exp in trainNames}
-    testData = {exp: wantedData[exp] for exp in testNames}
+    trainData = {exp: dataMeasurements[exp] for exp in trainNames}
+    testData = {exp: dataMeasurements[exp] for exp in testNames}
 
-    # testIdx = set(expIdx).difference(trainIdx)
-    # testIdx=list(testIdx)
-    # sh=1
-    # trainIdx.extend(testIdx[:sh])
-    # testIdx.extend(trainIdx[:sh])
-    # trainIdx=trainIdx[sh:]
-    # testIdx=testIdx[sh:]
-    # trainData = {key: wantedData[key] for key in wantedData.keys() & [expNames[i]for i in trainIdx]}
-    # testData = {key: wantedData[key] for key in wantedData.keys() & [expNames[i]for i in testIdx]}
-    # trainData['expNames'] = [expNames[i]for i in trainIdx]
-    # testData['expNames'] = [expNames[i]for i in testIdx]
     return trainData, testData, trainNames, testNames
 
 def setPreferences():
-    # Output: dictionary containing all preferences for model building script.
+    # output:
+    # pref- a dictionary containing all relevant preferences for
+    #       next run (each preference is either a number or a string)
 
+    # Run GUI function to determine preferences
     pref = linear_model_GUI()
+
+    # Decide fraction options to test according to input from GUI
     if pref['Fraction maximal value']-pref['Fraction minimal value'] < 0.4:
         pref['fracOptions'] = np.arange(pref['Fraction minimal value'], pref['Fraction maximal value'] + 0.05, 0.05)
     else:
         pref['fracOptions'] = np.arange(pref['Fraction minimal value'], pref['Fraction maximal value'] + 0.1, 0.1)
 
+    # Add aditional preferences
     pref['featuresDist'] = ['Time']
     pref['Combinations'] = create_combinations(pref)
     pref['variables'] = ['Product']
-    pref['numCVOpt'] = pref['Rel train size']
     return pref
 
 def combineData(trainData, testData, isTestCombine=True):

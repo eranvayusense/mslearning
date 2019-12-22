@@ -2,7 +2,17 @@ import pandas as pd
 import numpy as np
 
 
-def run_var_model(variable, paramComb, trainData, testData, pref):
+def run_var_model(variable, paramComb, trainData, testData):
+# Inputs:
+#   1. variable-  Name of the variable to model.
+#   2. paramComb- Names of experiments currently selected for train data.
+#   3. testNames - Names of experiments currently selected for test data.
+# Outputs:
+#   1. trainData- Dictionary containing data frames of data for selected training experiments.
+#   2. testData- Dictionary containing data frames of data for selected test experiments.
+#   3. trainNames- Names of experiments currently selected for train data.
+#   4. testNames - Names of experiments currently selected for test data.
+
     delVariableName = variable + '_del'
     # dataframe containing all non nan train measurements, for relevant features and the modeled variable
     allRelTrainData = pd.concat([trainData[paramComb['features']], trainData[paramComb['featuresDist']],

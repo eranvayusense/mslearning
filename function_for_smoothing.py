@@ -1,11 +1,16 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+
+
 def filter_data(data, processType='Tobramycin'):
-    # from function_for_GUI import *
-    # Filter data
-    # Output: A dictionary with the same format as data, containing filtered data according to predetermined filter method.
-    # Either load from file or run new filtration
+# Inputs:
+#   1. data- a dictionary containing dataframe for each experiment
+#   2. processType- the type of process we are working with
+# Output:
+#   1. smoothedData- A dictionary with the same format as data, containing filtered data
+#   according to predetermined filter method.
+
     smoothedData = {}
     if processType == 'Tobramycin':
         for exp in data.keys():
