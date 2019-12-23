@@ -33,7 +33,7 @@ def run_var_model(variable, paramComb, trainData, testData):
         zout1, wout = loess_nd_test_point(relTrainData, trainDistVar, trainResults,
                                       relTestData, testDistVar, frac=paramComb['frac'])
 
-        errorVal += abs(zout1 - testResult)/(zout1 + testResult)
+        errorVal += abs(zout1 - testResult)/(abs(zout1) + abs(testResult))
     return errorVal
             # np.mean(np.abs((z_smoot_test[:, idxFeat, idxFilt] - titterTestNP) / (titterTestNP + z_smoot_test[:, idxFeat, idxFilt])))
 
@@ -269,19 +269,26 @@ def run_and_test_full_model(pref, results, modelingDataCombined, validationData)
                 modeledVars[exp][var].iloc[t+1] = \
                     modeledVars[exp][var].iloc[t] + deltaVar/60
                 currModelState[var] = modeledVars[exp][var].iloc[t+1]
-    gold_var=gold_hyper(pref, validationData, modeledVars)
-    return modeledVars
+    gold_mean = gold_hyper(pref, validationData, modeledVars)
+    return modeledVars, gold_mean
 
 
 def gold_hyper(pref,testData,modeledVars):
+    # function gold_hyper calculate the goodness of predicted model (modeledVars) to test data (testData)
+   # input:
     gold_var={}
+    gold_mean_comul = 0
     for exp in testData.keys():
         #expLength = int(round(testData[exp]['TimeMeas'].iloc[-1])) + 1 #  Experiments length in minutes
         gold_var[exp] = pd.DataFrame()
         for var in pref['Variables']:
-           # modeledVarsForExp[var] = testData[exp][var].iloc[0] * np.ones([expLength, ])
-            gold_var[exp][var]=[sum(abs((testData[exp][var]-modeledVars[exp][var])/(testData[exp][var]+modeledVars[exp][var])))]
-    return gold_var
+           # calculte goodness of prediction  for spesific exp and specific featchare
+            gold_var[exp][var]=[sum(abs((testData[exp][var]-modeledVars[exp][var])/
+                                        (abs(testData[exp][var])+abs(modeledVars[exp][var]))))/len(testData[exp][var])]
+        gold_mean_comul = gold_mean_comul+gold_var[exp].mean(axis=1)  # assuming uniform weights for the featchers
+    gold_mean = gold_mean_comul/len(testData.keys())
+    return gold_mean
+
 
 
 def simulation_initialization(expData, pref):

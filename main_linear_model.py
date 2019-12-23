@@ -31,10 +31,11 @@ for variable in pref['Variables']: #Run over every modeled variable
 
     for paramComb in pref['Combinations'].keys(): #Run over all combinations of hyper parameters (features, frac, etc.) including index value
         # If variable is using himself as an input of the linear equation, give bad score
-        if variable in pref['Combinations'][paramComb]['features']:
+        if (variable in pref['Combinations'][paramComb]['features']) or len(pref['Combinations'][paramComb]['features'])<2:# moti
             results[variable]['resultsVec'][paramComb] = 1e8
             continue
-        for CVOpt in range(0, pref['numCVOpt']): #'numCVOpt' is the number of train/test division options
+        CVend= 1# pref['numCVOpt']  moti
+        for CVOpt in range(0, CVend): #'numCVOpt' is the number of train/test division options
             trainData, testData, pref['CVTrain'], pref['CVTest'] = \
                 devide_data_comb(dataMeasurements, pref['CVTrain'], pref['CVTest'])
 
@@ -54,11 +55,10 @@ for variable in pref['Variables']: #Run over every modeled variable
 # Run full linear model using best Hyper parameters configuration for each variable according to last CV division and
 # display comparison
 allModelingData = trainDataCombined.append(testDataCombined)
-modeledVars = run_and_test_full_model(pref, results, allModelingData, interpDataPPValid)
+modeledVars, gold_mean = run_and_test_full_model(pref, results, allModelingData, interpDataPPValid)
 
-
-
-show_results(modeledVars, interpDataPPValid, pref)
+# Display results of validation experiments for best configuration (data VS model)
+show_results(modeledVars, interpDataPPValid, pref, gold_mean)
 q=2
 # Next step is to find the variables which reduces model's accuracy. could be by taking out one variable from the model
 # each time and finding the improvement in "fullModelScore".
