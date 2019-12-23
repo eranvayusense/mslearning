@@ -14,8 +14,13 @@ interpData, interpDataPP = load_data(pref['Process Type'], pref['preProcessing t
                                      pref['Is filter data'], relExp=pref['Relevant experiments'],
                                      isLoadInterpolated=pref['isLoadInterpolated'])
 
+# Define modeling data and validation data
+interpDataPPModeling = {exp: interpDataPP[exp] for exp in pref['Modeling experiments']}
+interpDataPPValid = {exp: interpDataPP[exp] for exp in pref['Validation experiments']}
+
 # Create measurements dictionary for stand alone variable LLR
-dataMeasurements = meas_creator(interpDataPP, pref)
+dataMeasurements = meas_creator(interpDataPPModeling, pref)
+
 
 # Run calibration for rolling model
 for variable in pref['Variables']: #Run over every modeled variable
@@ -48,11 +53,12 @@ for variable in pref['Variables']: #Run over every modeled variable
 
 # Run full linear model using best Hyper parameters configuration for each variable according to last CV division and
 # display comparison
-modeledVars = run_and_test_full_model(pref, results, trainDataCombined, interpDataPP)
+allModelingData = trainDataCombined.append(testDataCombined)
+modeledVars = run_and_test_full_model(pref, results, allModelingData, interpDataPPValid)
 
 
 
-show_results(modeledVars, interpDataPP, pref)
+show_results(modeledVars, interpDataPPValid, pref)
 q=2
 # Next step is to find the variables which reduces model's accuracy. could be by taking out one variable from the model
 # each time and finding the improvement in "fullModelScore".

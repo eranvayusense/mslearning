@@ -9,10 +9,11 @@ from itertools import combinations
 
 def linear_model_GUI():
     def passForword1():
-        global processType, preProcessing, relTrainSize
+        global processType, preProcessing, relTrainSize, relDataModelingSize
         processType = processTypeGUI.get()
         preProcessing = preProcessingGUI.get()
         relTrainSize = relTrainSizeGUI.get()
+        relDataModelingSize = relDataModelingSizeGUI.get()
         firstGUI.destroy()
 
     def passForword2():
@@ -60,13 +61,22 @@ def linear_model_GUI():
     preProcessingDropDown = OptionMenu(firstGUI, preProcessingGUI, 'No preprocessing', 'scaling (0-1)', 'Standardize (Robust scalar)')
     preProcessingDropDown.grid(row=2, column=2, sticky=E, pady=10)
 
-    # Select train relative size
+    # Select size for modeling process (train and test). the rest is validation
+    relDataModelingSizeText = Label(firstGUI, text='Modeling process data relative size:', font=('Helvetica', '10', 'bold'))
+    relDataModelingSizeText.grid(row=3, column=1, sticky=E, padx=10, pady=10)
+    relDataModelingSizeGUI = StringVar(firstGUI)
+    relDataModelingSizeGUI.set("0.8")  # default value
+    relDataModelingSizeDropDown = OptionMenu(firstGUI, relDataModelingSizeGUI, '0.75', '0.8', '0.85', '0.9')
+    relDataModelingSizeDropDown.grid(row=3, column=2, sticky=E, pady=10)
+
+    # train relative size
     relTrainSizeText = Label(firstGUI, text='Training dataset relative size:', font=('Helvetica', '10', 'bold'))
-    relTrainSizeText.grid(row=3, column=1, sticky=E, padx=10, pady=10)
+    relTrainSizeText.grid(row=3, column=3, sticky=E, padx=10, pady=10)
     relTrainSizeGUI = StringVar(firstGUI)
     relTrainSizeGUI.set("0.75")  # default value
     relTrainSizeDropDown = OptionMenu(firstGUI, relTrainSizeGUI, '0.7', '0.75', '0.8')
-    relTrainSizeDropDown.grid(row=3, column=2, sticky=E, pady=10)
+    relTrainSizeDropDown.grid(row=3, column=4, sticky=E, pady=10)
+
 
     filterDataText = Label(firstGUI, text='Filter data?', font=('Helvetica', '10', 'bold'))
     filterDataText.grid(row=4, column=1, sticky=E, pady=20, padx=10)
@@ -159,15 +169,19 @@ def linear_model_GUI():
     relVarInExp = varInExp[varForModel]#create 0/1 dataframe only for selected variables
     relExp = list(relVarInExp[relVarInExp.sum(axis=1) == len(varForModel)].index)
     random.shuffle(relExp)# Shuffle experiments order to avoid unwanted dependencies
+    modelingRelExp = relExp[0:int(float(relDataModelingSize) * len(relExp))]
+    validationRelExp = relExp[int(float(relDataModelingSize) * len(relExp)):]
 
 
     pref = {'Variables': varForModel,'Data variables': varForData, 'Process Type': processType,
-            'preProcessing type': preProcessing, 'Rel train size': relTrainSize, 'Is filter data': isFilterData,
+            'preProcessing type': preProcessing, 'Rel train size': relTrainSize,
+            'Rel modeling size': relDataModelingSize, 'Is filter data': isFilterData,
             'Fraction minimal value': fractionMinVal, 'Fraction maximal value': fractionMaxVal,
-            'Relevant experiments': relExp, 'allVariables': varOpt, 'isLoadInterpolated': isLoadInterpolated}
-    pref['numCVOpt'] = len(relExp) #number of options for different CV
-    pref['CVTrain'] = relExp[0:int(float(relTrainSize) * len(relExp))]# Chosen experiments for train, in first CV division
-    pref['CVTest'] = relExp[int(float(relTrainSize) * len(relExp)):]# Chosen experiments for test, in first CV division
+            'Relevant experiments': relExp, 'allVariables': varOpt, 'isLoadInterpolated': isLoadInterpolated,
+            'Modeling experiments': modelingRelExp, 'Validation experiments': validationRelExp}
+    pref['numCVOpt'] = len(modelingRelExp) #number of options for different CV
+    pref['CVTrain'] = modelingRelExp[0:int(float(relTrainSize) * len(modelingRelExp))]# Chosen experiments for train, in first CV division
+    pref['CVTest'] = modelingRelExp[int(float(relTrainSize) * len(modelingRelExp)):]# Chosen experiments for test, in first CV division
     return pref
     # list(data.columns)
 
@@ -223,40 +237,37 @@ def load_data(process, preProcessing, isFilterData, relExp='All', isLoadInterpol
 
 
 def pre_process_function(data, preProcessing):
-# Intputs :
-#   1. data (similar to interpData in "load_data")- a dictionary containing dataframes for
-#                relevant experiments. Each data frame represents one experiment after linear
-#                interpulation where rows are time and columns are measured variables.
-#   2. preProcessing- Type of preprocessing technique.
-# Outputs :
-#   1. dataPP- same format as data, after preprocessing technique activated.
+    # Intputs :
+    #   1. data (similar to interpData in "load_data")- a dictionary containing dataframes for
+    #                relevant experiments. Each data frame represents one experiment after linear
+    #                interpo lation where rows are time and columns are measured variables.
+    #   2. preProcessing- Type of preprocessing technique.
+    # Outputs :
+    #   1. dataPP- same format as data, after preprocessing technique activated.
     dataPP = {}
+    dataCombined = pd.DataFrame()
+    numOfMeasVec = []
+    for exp in data.keys():
+        dataCombined = dataCombined.append(data[exp], ignore_index=True, sort=False)
+        numOfMeasVec.append(len(data[exp]))
     if preProcessing == 'Standardize (Robust scalar)':
-        for exp in data.keys():
-            varNames = list(data[exp].columns)
-            # varNames.append('Time')
-            # data[exp]['Time'] = data[exp].index
-            dataProcessed = RobustScaler().fit_transform(data[exp])
-            dataPP[exp] = pd.DataFrame(dataProcessed, columns=varNames)
-            varNames.append('TimeMeas')
-            dataPP[exp]['TimeMeas'] = dataPP[exp].index
+        varNames = list(dataCombined.columns)
+        dataProcessed = RobustScaler().fit_transform(dataCombined)
+        dataPPCombined = pd.DataFrame(dataProcessed, columns=varNames)
     if preProcessing == 'scaling (0-1)':
-        for exp in data.keys():
-            varNames = list(data[exp].columns)
-            # varNames.append('Time')
-            # data[exp]['Time'] = data[exp].index
-            dataProcessed = MinMaxScaler().fit_transform(data[exp])
-            dataPP[exp] = pd.DataFrame(dataProcessed, columns=varNames)
-            varNames.append('TimeMeas')
-            dataPP[exp]['TimeMeas'] = dataPP[exp].index
+        varNames = list(dataCombined.columns)
+        dataProcessed = MinMaxScaler().fit_transform(dataCombined)
+        dataPPCombined = pd.DataFrame(dataProcessed, columns=varNames)
     if preProcessing == 'No preprocessing':
-        for exp in data.keys():
-            varNames = list(data[exp].columns)
-            varNames.append('Time')
-            data[exp]['Time'] = data[exp].index
-            varNames.append('TimeMeas')
-            data[exp]['TimeMeas'] = data[exp].index
-        dataPP = data
+        varNames = list(dataCombined.columns)
+        dataPPCombined = data
+    idx = 0
+    for expIdx, expName in enumerate(data.keys()):
+        dataPP[expName] = dataPPCombined.iloc[idx:idx + numOfMeasVec[expIdx]]
+        idx += numOfMeasVec[expIdx]
+        varNames.append('TimeMeas')
+        dataPP[expName].reset_index(drop=True, inplace=True)
+        dataPP[expName].loc[:, 'TimeMeas'] = data[expName].index
     return dataPP
 
 def data_interp_df(allData):
