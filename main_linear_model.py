@@ -34,7 +34,7 @@ for variable in pref['Variables']: #Run over every modeled variable
         if (variable in pref['Combinations'][paramComb]['features']) or len(pref['Combinations'][paramComb]['features'])<2:# moti
             results[variable]['resultsVec'][paramComb] = 1e8
             continue
-        CVend= 1# pref['numCVOpt']  moti
+        CVend= 5# pref['numCVOpt']  moti
         for CVOpt in range(0, CVend): #'numCVOpt' is the number of train/test division options
             trainData, testData, pref['CVTrain'], pref['CVTest'] = \
                 devide_data_comb(dataMeasurements, pref['CVTrain'], pref['CVTest'])
@@ -45,9 +45,10 @@ for variable in pref['Variables']: #Run over every modeled variable
                 combineData(trainData, testData)
 
             # Calculate mean goal function score for all test experiments and sum for all possibilities of Cross Validation
-            results[variable]['resultsVec'][paramComb] += run_var_model(variable, pref['Combinations'][paramComb],
+            #results[variable]['resultsVec'][paramComb] += run_var_model(variable, pref['Combinations'][paramComb],
+            #                                                            trainDataCombined, testDataCombined)   #  moti
+            results[variable]['resultsVec'][paramComb] += run_var_model_mat(variable, pref['Combinations'][paramComb],
                                                                         trainDataCombined, testDataCombined)
-
     # Sort all possible Hyper parameters combinations according to 'resultsVec' values and find best configuration
     results[variable]['sortedCombinations'], results[variable]['sortedResultsVec'], results[variable]['bestParams'] = \
         sort_param_comb(pref, results[variable]['resultsVec'])
