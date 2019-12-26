@@ -16,7 +16,7 @@ def show_results(modeledVars, validationData, pref, gold_mean):
 
     numOfVar = len(pref['Variables'])
     numOfRows = int(math.ceil(numOfVar/2))
-    for exp in validationData.keys():
+    for exp in modeledVars.keys():
         plt.figure()
         for varIdx, varName in enumerate(pref['Variables'], start=1):
             plt.subplot(numOfRows, 2, varIdx)

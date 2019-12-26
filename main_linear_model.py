@@ -69,7 +69,6 @@ if __name__ == '__main__':
 
 
 
-
 # # Run over all combinations of hyper parameters (features, frac, etc.) including index value
 # # If variable is using himself as an input of the linear equation, give bad score
 # if (variable in pref['Combinations'][paramComb]['features']) or\
@@ -90,12 +89,3 @@ if __name__ == '__main__':
 #     results[variable]['resultsVec2'][paramComb] +=\
 #         run_var_model(variable, pref['Combinations'][paramComb],
 #                       trainDataCombined, testDataCombined)
-
-
-
-
-
-
-
-
-
