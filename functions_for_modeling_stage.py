@@ -61,19 +61,30 @@ def run_var_model_mat(variable, paramComb, trainData, testData):
     allRelTrainData = pd.concat([trainData[paramComb['features']], trainData[paramComb['featuresDist']],
                             trainData[delVariableName]], axis=1).dropna()
 
-    relTrainData = allRelTrainData[paramComb['features']].to_numpy()  # relevant features for linear equation.
-    trainDistVar = allRelTrainData[paramComb['featuresDist']].to_numpy()  # relevant distance values for LLR algorithm.
-    trainResults = allRelTrainData[delVariableName].to_numpy()  # train delta values of modeled variable
+    allModelingData = allRelTrainData.T.drop_duplicates().T  # Remove duplications from "allRelTrainDataInit" dataframe
+
+    relTrainData = allModelingData[paramComb['features']].to_numpy()  # relevant features for linear equation.
+    trainDistVar = allModelingData[paramComb['featuresDist']].to_numpy()  # relevant distance values for LLR algorithm.
+    trainResults = allModelingData[delVariableName].to_numpy()  # train delta values of modeled variable
 
     # dataframe containing all non nan test measurements, for relevant features and the modeled variable
-    allRelTestData = pd.concat([testData[paramComb['features']], testData[paramComb['featuresDist']],
+    allRelTestDataInit = pd.concat([testData[paramComb['features']], testData[paramComb['featuresDist']],
                                 testData[delVariableName]], axis=1).dropna()
+
+    allRelTestData = allRelTestDataInit.T.drop_duplicates().T  # Remove duplications from "allRelTrainDataInit" dataframe
+
     #tParallel=time.time()
-    test_dist={};train_dist={};distSumSqr = 0
+    test_dist={}; train_dist={}; distSumSqr = 0
     for varForDist in paramComb['featuresDist']:
-        test_dist[varForDist]=np.repeat(testData[paramComb['featuresDist']].to_numpy().T, trainDistVar.size, axis=0)
-        train_dist[varForDist]=np.repeat(trainDistVar,len(testData[paramComb['featuresDist']].to_numpy()), axis=1)
-        distVarSqr = (test_dist[varForDist] - train_dist[varForDist]) ** 2
+        test_dist[varForDist] = np.repeat(testData[paramComb['featuresDist']].to_numpy().T,
+                                          trainDistVar.size, axis=0)
+        train_dist[varForDist] = np.repeat(trainDistVar,
+                                           len(testData[paramComb['featuresDist']].to_numpy()),
+                                           axis=1)
+        try:
+            distVarSqr = (test_dist[varForDist] - train_dist[varForDist]) ** 2
+        except:
+            q=2
         distSumSqr += distVarSqr
     npoints = int(np.ceil(paramComb['frac'] * relTrainData[:, 0].size))
     dist = np.sqrt(distSumSqr)
@@ -81,7 +92,7 @@ def run_var_model_mat(variable, paramComb, trainData, testData):
     errorVal = 0  # Initialize error value
    # print('mat1 run: ' + str(time.time() - tParallel))
     tParallel=time.time()
-    zout1, wout = loess_nd_test_point_mat(allRelTestData,paramComb,relTrainData, trainDistVar,
+    zout1, wout = loess_nd_test_point_mat(allRelTestData, paramComb, relTrainData, trainDistVar,
                                           trainResults, dist, w, frac=paramComb['frac'])
     for index, row in allRelTestData.iterrows():
         #relTestData = row[paramComb['features']].to_numpy()
@@ -320,12 +331,15 @@ def polyfit_nd_coeff(trainModelVar, trainResults, testModelVar, degree, sigz=Non
     #     a[:, r1] = c[:, r1]*sw
 
     #coeff = np.linalg.lstsq(a, trainResults*sw, rcond=None)[0]
-    c2[:,1:] = trainModelVar
-    c_test2[:,1:]=testModelVar
+    try:
+        c2[:, 1:] = trainModelVar
+        c_test2[:, 1:] = testModelVar
+    except:
+        q=2
             # c_test[:, r1] =c_test[:, r1]*X_test[:,col]**L1[r1,col]
    # for r1 in range(npol):# loop on config
-    bb=np.repeat([[sw]],c2.shape[1],axis=1)
-    a2 = c2*bb[0,:,:].T
+    bb=np.repeat([[sw]], c2.shape[1], axis=1)
+    a2 = c2*bb[0, :, :].T
     coeff2 = np.linalg.lstsq(a2, trainResults*sw, rcond=None)[0]
     return coeff2, c_test2[0, :]
 
