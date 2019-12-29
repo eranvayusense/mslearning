@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-def show_results(modeledVars, validationData, pref, gold_mean):
+def show_results(scale_params,modeledVars, validationData, pref, gold_mean):
 # Discription:
 #   A function which displays the modeled values againts actual measurements for all test experiments.
 # Inputs:
@@ -20,7 +20,9 @@ def show_results(modeledVars, validationData, pref, gold_mean):
         plt.figure()
         for varIdx, varName in enumerate(pref['Variables'], start=1):
             plt.subplot(numOfRows, 2, varIdx)
-            plt.plot(validationData[exp]['TimeMeas'], validationData[exp][varName], modeledVars[exp][varName])
+            plt.plot(validationData[exp]['TimeMeas'],
+                     validationData[exp][varName]*scale_params[varName][1]+scale_params[varName][0],
+                     modeledVars[exp][varName]*scale_params[varName][1]+scale_params[varName][0])
             plt.title([varName+', gold='+str(gold_mean)])
             plt.legend(['Measured data', 'Modeled data'])
 

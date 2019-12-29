@@ -2,9 +2,9 @@
 from functions_for_orginization import *
 from functions_for_modeling_stage import *
 from functions_for_score_and_display import *
+# Create preferences for run
 import multiprocessing as mp
 import time
-
 if __name__ == '__main__':
     # Create preferences for run
     pref = setPreferences()
@@ -13,7 +13,7 @@ if __name__ == '__main__':
     results = {}  # Dictionary, containing a results dictionary for each variable
 
     # Load interpolated data and pre-process data for relevant experiments
-    interpData, interpDataPP = load_data(pref['Process Type'], pref['preProcessing type'],
+    interpData, interpDataPP,scale_params = load_data(pref['Process Type'], pref['preProcessing type'],
                                          pref['Is filter data'], relExp=pref['Relevant experiments'],
                                          isLoadInterpolated=pref['isLoadInterpolated'])
 
@@ -40,9 +40,9 @@ if __name__ == '__main__':
             results[variable]['resultsVec'] = np.array(resultsVecForVar)
 
         else:# Run one processor
-            results[variable]['resultsVec2'] = np.zeros((len(pref['Combinations'])))
+            results[variable]['resultsVec'] = np.zeros((len(pref['Combinations'])))
             for paramComb in pref['Combinations'].keys():
-                results[variable]['resultsVec2'][paramComb] = \
+                 results[variable]['resultsVec'][paramComb] = \
                     run_var_model_for_all_CV(paramComb, pref, dataMeasurements, variable)
 
         modelingTime = time.time() - modelingT0  # Time stamp (toc)
@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
 
     # Display results of validation experiments for best configuration (data VS model)
-    show_results(modeledVars, interpDataPPValid, pref, gold_mean)
+    show_results(scale_params,modeledVars, interpDataPPValid, pref, gold_mean)
     q=2
     # Next step is to find the variables which reduces model's accuracy. could be by taking out one variable from the model
     # each time and finding the improvement in "fullModelScore".

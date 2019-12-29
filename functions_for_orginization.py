@@ -4,6 +4,7 @@ import pandas as pd
 import pickle
 import numpy as np
 import random
+import scipy
 from itertools import combinations
 from tkinter import *
 
@@ -130,7 +131,7 @@ def linear_model_GUI():
     isLoadInterpolated = isLoadInterpolated.get()
     isRunParallel = isRunParallel.get()
     # Orginize needed data for next GUI
-    data, dataPP = load_data(processType, preProcessing, isFilterData, isLoadInterpolated = isLoadInterpolated)#load data for variable options
+    data, dataPP,scale_params  = load_data(processType, preProcessing, isFilterData, isLoadInterpolated = isLoadInterpolated)#load data for variable options
     expList = list(data.keys())
     varOpt = []
     varInExp = pd.DataFrame(index=expList)
@@ -271,10 +272,10 @@ def load_data(process, preProcessing, isFilterData, relExp='All', isLoadInterpol
         interpData = data_interp_df(data)
 
     # Conduct pre-processing according to wanted type
-    interpDataPP = pre_process_function(interpData, preProcessing)
+    interpDataPP ,scale_params= pre_process_function(interpData, preProcessing)
 
 
-    return interpData, interpDataPP
+    return interpData, interpDataPP,scale_params
 
 
 def pre_process_function(data, preProcessing):
@@ -298,11 +299,13 @@ def pre_process_function(data, preProcessing):
         numOfMeasVec.append(len(data[exp]))
     if preProcessing == 'Standardize (Robust scalar)':
         varNames = list(dataCombined.columns)
-        dataProcessed = RobustScaler().fit_transform(dataCombined)
+        scal=RobustScaler()
+        dataProcessed = scal.fit_transform(dataCombined)
         dataPPCombined = pd.DataFrame(dataProcessed, columns=varNames)
     if preProcessing == 'scaling (0-1)':
         varNames = list(dataCombined.columns)
-        dataProcessed = MinMaxScaler().fit_transform(dataCombined)
+        scal=MinMaxScaler()
+        dataProcessed = scal.fit_transform(dataCombined)
         dataPPCombined = pd.DataFrame(dataProcessed, columns=varNames)
     if preProcessing == 'No preprocessing':
         varNames = list(dataCombined.columns)
@@ -311,10 +314,19 @@ def pre_process_function(data, preProcessing):
     for expIdx, expName in enumerate(data.keys()):
         dataPP[expName] = dataPPCombined.iloc[idx:idx + numOfMeasVec[expIdx]]
         idx += numOfMeasVec[expIdx]
-        varNames.append('TimeMeas')
+        if 'TimeMeas' in varNames:
+           demo=1
+        else:
+             varNames.append('TimeMeas')
         dataPP[expName].reset_index(drop=True, inplace=True)
         dataPP[expName].loc[:, 'TimeMeas'] = data[expName].index
-    return dataPP
+    scale1= pd.DataFrame()
+    for var in varNames[:-1]:
+        try:
+            scale1[var] = [dataCombined[var].median(), scipy.stats.iqr(dataCombined[var])]
+        except:
+            dd=1
+    return dataPP,scale1
 
 def data_interp_df(allData):
     """
