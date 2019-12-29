@@ -1,16 +1,23 @@
 import pandas as pd
 import numpy as np
+from functions_for_orginization import *
 import time
 def run_var_model(variable, paramComb, trainData, testData):
-# Inputs:
-#   1. variable-  Name of the variable to model.
-#   2. paramComb- Dictionary containing variables for linear eqation, variables for distance and fraction value for
-#                 current run.
-#   3. trainData - Dictionary containing data frames of data for selected training experiments.
-#   4. testData- Dictionary containing data frames of data for selected test experiments.
-# Outputs:
-#   1. errorVal- Sum for all mean errors, comparing data and modeled values for all test data,
-
+    """
+    Description:
+    A function which runs LLR modeling for a specific variable, and calculates the model's
+    sum error for every Hyper parameters combination.
+    Inputs:
+      1. variable-  Name of the variable to model.
+      2. paramComb- Dictionary containing variables for linear equation,
+       variables for distance and fraction value for current run.
+      3. trainData - Dictionary containing data frames of data for selected training
+       experiments.
+      4. testData- Dictionary containing data frames of data for selected test experiments.
+    Outputs:
+      1. errorVal- Sum for all mean errors, comparing data and modeled values for all test
+                   data.
+    """
     delVariableName = variable + '_del'  # name for delta value of variable, so that it is different from original name.
 
     # dataframe containing all non nan train measurements, for relevant features and the modeled variable
@@ -54,19 +61,30 @@ def run_var_model_mat(variable, paramComb, trainData, testData):
     allRelTrainData = pd.concat([trainData[paramComb['features']], trainData[paramComb['featuresDist']],
                             trainData[delVariableName]], axis=1).dropna()
 
-    relTrainData = allRelTrainData[paramComb['features']].to_numpy()  # relevant features for linear equation.
-    trainDistVar = allRelTrainData[paramComb['featuresDist']].to_numpy()  # relevant distance values for LLR algorithm.
-    trainResults = allRelTrainData[delVariableName].to_numpy()  # train delta values of modeled variable
+    allModelingData = allRelTrainData.T.drop_duplicates().T  # Remove duplications from "allRelTrainDataInit" dataframe
+
+    relTrainData = allModelingData[paramComb['features']].to_numpy()  # relevant features for linear equation.
+    trainDistVar = allModelingData[paramComb['featuresDist']].to_numpy()  # relevant distance values for LLR algorithm.
+    trainResults = allModelingData[delVariableName].to_numpy()  # train delta values of modeled variable
 
     # dataframe containing all non nan test measurements, for relevant features and the modeled variable
-    allRelTestData = pd.concat([testData[paramComb['features']], testData[paramComb['featuresDist']],
+    allRelTestDataInit = pd.concat([testData[paramComb['features']], testData[paramComb['featuresDist']],
                                 testData[delVariableName]], axis=1).dropna()
+
+    allRelTestData = allRelTestDataInit.T.drop_duplicates().T  # Remove duplications from "allRelTrainDataInit" dataframe
+
     #tParallel=time.time()
-    test_dist={};train_dist={};distSumSqr = 0
+    test_dist={}; train_dist={}; distSumSqr = 0
     for varForDist in paramComb['featuresDist']:
-        test_dist[varForDist]=np.repeat(testData[paramComb['featuresDist']].to_numpy().T, trainDistVar.size, axis=0)
-        train_dist[varForDist]=np.repeat(trainDistVar,len(testData[paramComb['featuresDist']].to_numpy()), axis=1)
-        distVarSqr = (test_dist[varForDist] - train_dist[varForDist]) ** 2
+        test_dist[varForDist] = np.repeat(testData[paramComb['featuresDist']].to_numpy().T,
+                                          trainDistVar.size, axis=0)
+        train_dist[varForDist] = np.repeat(trainDistVar,
+                                           len(testData[paramComb['featuresDist']].to_numpy()),
+                                           axis=1)
+        try:
+            distVarSqr = (test_dist[varForDist] - train_dist[varForDist]) ** 2
+        except:
+            q=2
         distSumSqr += distVarSqr
     npoints = int(np.ceil(paramComb['frac'] * relTrainData[:, 0].size))
     dist = np.sqrt(distSumSqr)
@@ -74,8 +92,8 @@ def run_var_model_mat(variable, paramComb, trainData, testData):
     errorVal = 0  # Initialize error value
    # print('mat1 run: ' + str(time.time() - tParallel))
     tParallel=time.time()
-    zout1, wout = loess_nd_test_point_mat(allRelTestData,paramComb,relTrainData, trainDistVar, trainResults,
-                                       dist,w, frac=paramComb['frac'])
+    zout1, wout = loess_nd_test_point_mat(allRelTestData, paramComb, relTrainData, trainDistVar,
+                                          trainResults, dist, w, frac=paramComb['frac'])
     for index, row in allRelTestData.iterrows():
         #relTestData = row[paramComb['features']].to_numpy()
         #testDistVar = row[paramComb['featuresDist']].to_numpy()
@@ -121,8 +139,8 @@ def loess_nd_test_point_mat(allRelTestData,paramComb,trainModelVar, trainDistVar
     zout=np.zeros([1,allRelTestData.shape[0]]) ; wout=np.zeros([1,allRelTestData.shape[0]])
     for index, row in allRelTestData.iterrows():
         testModelVar = row[paramComb['features']].to_numpy()
-        dist=dist_all[:,index]
-        w=w_all[:,index]
+        dist=dist_all[:, index]
+        w=w_all[:, index]
         distWeights = (1 - (dist[w]/dist[w[-1]])**3)**3  # tricube function distance weights
         zfit = polyfit_nd(trainModelVar[w, :], trainResults[w], degree, weights=distWeights)
 
@@ -140,15 +158,15 @@ def loess_nd_test_point_mat(allRelTestData,paramComb,trainModelVar, trainDistVar
             uu = uu.clip(0, 1)
             biWeights = (1 - uu)**2
             totWeights = distWeights*biWeights
-            zfit =polyfit_nd(trainModelVar[w,:], trainResults[w], degree, weights=totWeights)
+            zfit =polyfit_nd(trainModelVar[w, :], trainResults[w], degree, weights=totWeights)
             badOld = bad
-            bad = np.where(biWeights < 0.34)[0] # 99% confidence outliers
+            bad = np.where(biWeights < 0.34)[0]  # 99% confidence outliers
             if np.array_equal(badOld, bad):
                 break
         coeff, c_test = polyfit_nd_coeff(trainModelVar[w, :], trainResults[w], testModelVar, degree, weights=totWeights)
 
-        zout[0,index] = c_test.dot(coeff)# zfit[0]
-        wout[0,index]= biWeights[0]
+        zout[0, index] = c_test.dot(coeff)# zfit[0]
+        wout[0, index]= biWeights[0]
 
 
     return zout, wout
@@ -156,23 +174,26 @@ def loess_nd_test_point_mat(allRelTestData,paramComb,trainModelVar, trainDistVar
 def loess_nd_test_point(trainModelVar, trainDistVar, trainResults, testModelVar, testdistVar,
                         frac=0.5, degree=1, sigz=None, npoints=None):
     """
-# Inputs:
-#   1. trainModelVar- Data frame for all linear modeling variables values in training stock. each row represents
-#                     a measurements at specific time.
-#   2. trainDistVar- Data frame for all distance variables values in training stock.
-#   3. trainResults- Modeled variable actual values for each measurement
-#   4. testModelVar- List of linear modeling variables representing one test measurement
-#   5. testDistVar- List of distance variables representing one test measurement
-#   6. testResult- Modeled variable actual values for each measurement
-#   7. frac- Float value representing the fraction of points building a linear model for a given test measurement
-#   8. degree- Integer representing the degree of the equation (degree=1 is linear equation)
-#   9. rescale- binary value (True/False) for rescaling the data before creating the model
-#   10. sigz- 1-sigma errors for the Z values. If this keyword is used the biweight fit is done assuming those errors.
-#             If this keyword is *not* used, the biweight fit determines the errors in Z from the scatter of the
-#             neighbouring points.
-# Outputs:
-#   1. zout- Modeled values for wanted variable to model.
-#   2. wout- Weights of importance for algorithm according to distace
+    Description:
+    A function which calculates the predicted value of a specific test point, according to the
+    point's features, and according to train data.
+    Inputs:
+      1. trainModelVar- Data frame for all linear modeling variables values in training stock. each row represents
+                        a measurements at specific time.
+      2. trainDistVar- Data frame for all distance variables values in training stock.
+      3. trainResults- Modeled variable actual values for each measurement
+      4. testModelVar- List of linear modeling variables representing one test measurement
+      5. testDistVar- List of distance variables representing one test measurement
+      6. testResult- Modeled variable actual values for each measurement
+      7. frac- Float value representing the fraction of points building a linear model for a given test measurement
+      8. degree- Integer representing the degree of the equation (degree=1 is linear equation)
+      9. rescale- binary value (True/False) for rescaling the data before creating the model
+      10. sigz- 1-sigma errors for the Z values. If this keyword is used the biweight fit is done assuming those errors.
+                If this keyword is *not* used, the biweight fit determines the errors in Z from the scatter of the
+                neighbouring points.
+    Outputs:
+      1. zout- Modeled values for wanted variable to model.
+      2. wout- Weights of importance for algorithm according to distace
     """
 
 
@@ -193,7 +214,7 @@ def loess_nd_test_point(trainModelVar, trainDistVar, trainResults, testModelVar,
 
     # Use errors if those are known.
     bad = []
-    for p in range(1):  # do at most 10 iterations    moti
+    for p in range(10):  # do at most 10 iterations    moti
 
         if sigz is None:  # Errors are unknown
             aerr = np.abs(zfit - trainResults[w])  # Note ABS()
@@ -205,14 +226,14 @@ def loess_nd_test_point(trainModelVar, trainDistVar, trainResults, testModelVar,
         uu = uu.clip(0, 1)
         biWeights = (1 - uu)**2
         totWeights = distWeights*biWeights
-        zfit =polyfit_nd(trainModelVar[w,:], trainResults[w], degree, weights=totWeights)
+        zfit = polyfit_nd(trainModelVar[w, :], trainResults[w], degree, weights=totWeights)
         badOld = bad
-        bad = np.where(biWeights < 0.34)[0] # 99% confidence outliers
+        bad = np.where(biWeights < 0.34)[0]  # 99% confidence outliers
         if np.array_equal(badOld, bad):
             break
     coeff, c_test = polyfit_nd_coeff(trainModelVar[w, :], trainResults[w], testModelVar, degree, weights=totWeights)
 
-    zout = c_test.dot(coeff)# zfit[0]
+    zout = c_test.dot(coeff)  # zfit[0]
     wout = biWeights[0]
 
 
@@ -263,7 +284,7 @@ def polyfit_nd(trainModelVar, trainResults, degree, sigz=None, weights=None):
             # c_test[:, r1] =c_test[:, r1]*X_test[:,col]**L1[r1,col]
    # for r1 in range(npol):# loop on config
     bb=np.repeat([[sw]],c2.shape[1],axis=1)
-    a2 = c2*bb[0,:,:].T
+    a2 = c2*bb[0, :, :].T
     coeff2 = np.linalg.lstsq(a2, trainResults*sw, rcond=None)[0]
     return c2.dot(coeff2)
 
@@ -310,47 +331,56 @@ def polyfit_nd_coeff(trainModelVar, trainResults, testModelVar, degree, sigz=Non
     #     a[:, r1] = c[:, r1]*sw
 
     #coeff = np.linalg.lstsq(a, trainResults*sw, rcond=None)[0]
-    c2[:,1:] = trainModelVar
-    c_test2[:,1:]=testModelVar
+    try:
+        c2[:, 1:] = trainModelVar
+        c_test2[:, 1:] = testModelVar
+    except:
+        q=2
             # c_test[:, r1] =c_test[:, r1]*X_test[:,col]**L1[r1,col]
    # for r1 in range(npol):# loop on config
-    bb=np.repeat([[sw]],c2.shape[1],axis=1)
-    a2 = c2*bb[0,:,:].T
+    bb=np.repeat([[sw]], c2.shape[1], axis=1)
+    a2 = c2*bb[0, :, :].T
     coeff2 = np.linalg.lstsq(a2, trainResults*sw, rcond=None)[0]
     return coeff2, c_test2[0, :]
 
 def sort_param_comb(pref, resultsVec):
-# Inputs:
-#   1. pref- Preferences dictionary
-#   2. resultsVec - vector containing results for all combinations
-# Outputs:
-#   1. sortedResultsVecIdx- Indexes of best results
-#   2. sortedResultsVec- resultsVec after sort. first value represents the best result (based on best Hyper parameters
-#                        combination).
-#   3. bestParams- Dictionary containing best variables for linear eqation, variables for distance and fraction value
-#                  for current run, selected according to their results.
+    """
+    Desciption:
+    A function which sorts the results vector and returns the sorted results vector and his
+    indexes.
+    Inputs:
+      1. pref- Preferences dictionary
+      2. resultsVec - vector containing results for all combinations
+    Outputs:
+      1. sortedResultsVecIdx- Indexes of best results
+      2. sortedResultsVec- resultsVec after sort. first value represents the best result (based on best Hyper parameters
+                           combination).
+      3. bestParams- Dictionary containing best variables for linear eqation, variables for distance and fraction value
+                     for current run, selected according to their results.
+    """
     sortedResultsVecIdx = resultsVec.argsort()
     sortedResultsVec = resultsVec[sortedResultsVecIdx]
     bestParams = pref['Combinations'][sortedResultsVecIdx[0]]
     return sortedResultsVecIdx, sortedResultsVec, bestParams
 
 def run_and_test_full_model(pref, results, modelingDataCombined, validationData):
-# Disciption:
-#   A function which simulates full rolling model, using the best linear model for each of the selected variables.
-# Inputs:
-#   1. pref- Preferences dictionary
-#   2. results- Dictionary, containing a results dictionary for each variable
-#   3. modelingDataCombined- Data frame with all relevant measurements from all experiments used for modeling(train and
-#                       test), according to the set of best combinations.
-#   4. testData- dictionary containing interpolated data frame for every validation experiment.
-# Outputs:
-#   1. modeledVars- Dictionary containing data frames for each test experiment, with all modeled variable values.
-
+    """
+    Desciption:
+      A function which simulates full rolling model, using the best linear model for each of the selected variables.
+    Inputs:
+      1. pref- Preferences dictionary
+      2. results- Dictionary, containing a results dictionary for each variable
+      3. modelingDataCombined- Data frame with all relevant measurements from all experiments used for modeling(train and
+                          test), according to the set of best combinations.
+      4. testData- dictionary containing interpolated data frame for every validation experiment.
+    Outputs:
+      1. modeledVars- Dictionary containing data frames for each test experiment, with all modeled variable values.
+    """
     # Initial conditions and constants
     modeledVars = {}
 
 
-    for exp in validationData.keys():
+    for exp in list(validationData.keys())[0:1]:# validate only the first experiment. eran
         #  Create a Dictionary containing relevant data for linear modeling of each modeled variable.
         dataDict = {}
         for var in pref['Variables']:
@@ -390,9 +420,9 @@ def run_and_test_full_model(pref, results, modelingDataCombined, validationData)
                 validationData[exp][pref['Data variables']].iloc[t]
             #  If featuresDist is a modeled parameter, we should not update it from data!!
             currModelState[pref['featuresDist']] = validationData[exp][pref['featuresDist']].iloc[t]
-            dt1=20
+            dt1 = 20
             for var in pref['Variables']:
-                if t%dt1:
+                if t % dt1:
                     modeledVars[exp][var].iloc[t+1] =modeledVars[exp][var].iloc[t]
 
                 else:
@@ -410,18 +440,19 @@ def run_and_test_full_model(pref, results, modelingDataCombined, validationData)
     return modeledVars, gold_mean
 
 
-def gold_hyper(pref,testData,modeledVars):
+def gold_hyper(pref, testData, modeledVars):
     # function gold_hyper calculate the goodness of predicted model (modeledVars) to test data (testData)
    # input:
-    gold_var={}
+    gold_var = {}
     gold_mean_comul = 0
-    for exp in testData.keys():
+    for exp in modeledVars.keys():
         #expLength = int(round(testData[exp]['TimeMeas'].iloc[-1])) + 1 #  Experiments length in minutes
         gold_var[exp] = pd.DataFrame()
         for var in pref['Variables']:
            # calculte goodness of prediction  for spesific exp and specific featchare
-            gold_var[exp][var]=[sum(abs((testData[exp][var]-modeledVars[exp][var])/
-                                        (abs(testData[exp][var])+abs(modeledVars[exp][var]))))/len(testData[exp][var])]
+            gold_var[exp][var] = [sum(abs((testData[exp][var]-modeledVars[exp][var])/
+                                      (abs(testData[exp][var]) +
+                                       abs(modeledVars[exp][var]))))/len(testData[exp][var])]
         gold_mean_comul = gold_mean_comul+gold_var[exp].mean(axis=1)  # assuming uniform weights for the featchers
     gold_mean = gold_mean_comul/len(testData.keys())
     return gold_mean
@@ -429,18 +460,20 @@ def gold_hyper(pref,testData,modeledVars):
 
 
 def simulation_initialization(expData, pref):
-# Disciption:
-#   A function which initializes vectores for each of the modeled variables, sets costant values and
-#   determines setting for the rolling model protocol.
-# Inputs:
-#   1. expData- Data frame of measured values for specific experiment.
-#   2. pref- Preferences dictionary
-# Outputs:
-#   1. Settings- Dictionary containing settings for rolling model protocol
-#   2. Const- Dictionary containing Chemical, Physical and technical constants of the model
-#   3. modeledVarsForExp- Data frame containing vectors at experiment's length of each modeled variables, filled with
-#                         the initial values of the experiment.
 
+    """
+    Desciption:
+      A function which initializes vectores for each of the modeled variables, sets costant values and
+      determines setting for the rolling model protocol.
+    Inputs:
+      1. expData- Data frame of measured values for specific experiment.
+      2. pref- Preferences dictionary
+    Outputs:
+      1. Settings- Dictionary containing settings for rolling model protocol
+      2. Const- Dictionary containing Chemical, Physical and technical constants of the model
+      3. modeledVarsForExp- Data frame containing vectors at experiment's length of each modeled variables, filled with
+                            the initial values of the experiment.
+    """
     # Settings initialization
     Settings = dict()
     Settings['DT'] = 1  # [min]
@@ -474,3 +507,42 @@ def simulation_initialization(expData, pref):
 
     # return values
     return Settings, Const, modeledVarsForExp
+
+
+def run_var_model_for_all_CV(paramComb, pref, dataMeasurements, variable):
+    """
+    Desciption:
+      A function which runs model for a specific variable for all relevant cross validation
+      options
+    Inputs:
+      1. paramComb- Data frame of measured values for specific experiment.
+      2. pref- Preferences dictionary
+      3. dataMeasurements- Dictionary containing data frames of data for selected experiments.
+      4. variable- Variable to model
+    Outputs:
+      1. scoreForParamComb- Sum of the score for all CV options
+    """
+    CVTrain = pref['CVTrain']
+    CVTest = pref['CVTest']
+    scoreForParamComb = 0
+    if (variable in pref['Combinations'][paramComb]['features']) or\
+            len(pref['Combinations'][paramComb]['features']) < 2:  # moti
+        scoreForParamComb = 1e8
+    else:
+        CVend = 1  # pref['numCVOpt'] moti
+        for CVOpt in range(0, CVend):  # 'numCVOpt' is the number of train/test division options
+            trainData, testData, CVTrain, CVTest = \
+                devide_data_comb(dataMeasurements, CVTrain, CVTest)
+
+            # Take dictionary of dataframe for every experiment, and output a dataframe with all experiments together
+            # features = pref['Combinations'][paramComb]['features']
+            trainDataCombined, testDataCombined = \
+                combineData(trainData, testData)
+
+            # Calculate mean goal function score for all test experiments and sum for all possibilities of Cross Validation
+            # scoreForParamComb += run_var_model(variable, pref['Combinations'][paramComb],
+            #                                     trainDataCombined, testDataCombined)
+            # Optional upgrade for run_var_model:
+            scoreForParamComb += run_var_model_mat(variable, pref['Combinations'][paramComb],
+                                                trainDataCombined, testDataCombined)
+    return scoreForParamComb

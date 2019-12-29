@@ -1,4 +1,3 @@
-from tkinter import *
 from function_for_smoothing import *
 from sklearn.preprocessing import MinMaxScaler, RobustScaler
 import pandas as pd
@@ -7,6 +6,34 @@ import numpy as np
 import random
 import scipy
 from itertools import combinations
+from tkinter import *
+
+
+def setPreferences():
+    """
+    Description:
+    A function which runs GUI of selecting wanted preferences for the run.
+    Output:
+    pref- a dictionary containing all relevant preferences for
+          next run (each preference is either a number or a string)
+    """
+    # Run GUI function to determine preferences
+    pref = linear_model_GUI()
+
+    # Decide fraction options to test according to input from GUI
+    if pref['Fraction maximal value']-pref['Fraction minimal value'] < 0.4:
+        pref['fracOptions'] = np.arange(pref['Fraction minimal value'], pref['Fraction maximal value'] + 0.05, 0.05)
+    else:
+        pref['fracOptions'] = np.arange(pref['Fraction minimal value'], pref['Fraction maximal value'] + 0.1, 0.1)
+
+    # Add aditional preferences
+    pref['featuresDist'] = ['Time']
+    pref['Combinations'] = create_combinations(pref)
+    pref['variables'] = ['Product']
+    return pref
+
+
+
 
 def linear_model_GUI():
     def passForword1():
@@ -85,16 +112,24 @@ def linear_model_GUI():
     Checkbutton(firstGUI, variable=isFilterData).grid(row=4, column=2, sticky=W, pady=20)
 
     interDataText = Label(firstGUI, text='Load interpolated data?', font=('Helvetica', '10', 'bold'))
-    interDataText.grid(row=5, column=1, sticky=E, pady=20, padx=10)
+    interDataText.grid(row=4, column=3, sticky=E, pady=20, padx=10)
     isLoadInterpolated = IntVar(value=1)
-    Checkbutton(firstGUI, variable=isLoadInterpolated).grid(row=5, column=2, sticky=W, pady=20)
+    Checkbutton(firstGUI, variable=isLoadInterpolated).grid(row=4, column=4, sticky=W, pady=20)
+
+    runParallelText = Label(firstGUI, text='Run parallel computing?', font=('Helvetica', '10', 'bold'))
+    runParallelText.grid(row=5, column=1, sticky=E, pady=20, padx=10)
+    isRunParallel = IntVar(value=1)
+    Checkbutton(firstGUI, variable=isRunParallel).grid(row=5, column=2, sticky=W, pady=20)
 
     #Continue to next GUI window
     button = Button(text="continue", command=passForword1, width=20, height=1, font=('Helvetica', '17'))
     button.place(rely=0.95, relx=0.5, anchor=CENTER)
     firstGUI.mainloop()
 
-
+    # get boolean values
+    isFilterData = isFilterData.get()
+    isLoadInterpolated = isLoadInterpolated.get()
+    isRunParallel = isRunParallel.get()
     # Orginize needed data for next GUI
     data, dataPP,scale_params  = load_data(processType, preProcessing, isFilterData, isLoadInterpolated = isLoadInterpolated)#load data for variable options
     expList = list(data.keys())
@@ -179,28 +214,34 @@ def linear_model_GUI():
             'Rel modeling size': relDataModelingSize, 'Is filter data': isFilterData,
             'Fraction minimal value': fractionMinVal, 'Fraction maximal value': fractionMaxVal,
             'Relevant experiments': relExp, 'allVariables': varOpt, 'isLoadInterpolated': isLoadInterpolated,
-            'Modeling experiments': modelingRelExp, 'Validation experiments': validationRelExp}
+            'Modeling experiments': modelingRelExp, 'Validation experiments': validationRelExp,
+            'Is run parallel': isRunParallel}
     pref['numCVOpt'] = len(modelingRelExp) #number of options for different CV
     pref['CVTrain'] = modelingRelExp[0:int(float(relTrainSize) * len(modelingRelExp))]# Chosen experiments for train, in first CV division
     pref['CVTest'] = modelingRelExp[int(float(relTrainSize) * len(modelingRelExp)):]# Chosen experiments for test, in first CV division
     return pref
     # list(data.columns)
 
-def load_data(process, preProcessing, isFilterData, relExp='All', isLoadInterpolated=1):
-# Inputs:
-#   1. process- Which process is modeled ('Tobramycin', 'BiondVax' etc.)
-#   2. preProcessing- selected type of preprocessing
-#   3. isFilterData- 1 if filter data is wanted, 0 if not
-#   4. relExp(difault is 'All')- list containing experiments where all selected
-#                              variables for model were measured. if 'All', all
-#                              experiments are used.
-# Outputs :
-#   1. interpData- a dictionary containing dataframes for relevant experiments. Each data
-#                frame represents one experiment after linear interpulation where rows
-#                are time and columns are measured variables.
-#   2. interpDataPP- the same format as data, after pre process protocol according to
-#                  selected type.
 
+def load_data(process, preProcessing, isFilterData, relExp='All', isLoadInterpolated=1):
+    """
+    Description:
+    A function which loads data from .py files, and then filters, interpolates (if data is
+    not already interpolated) and pre processes the data according to user selection
+    Inputs:
+      1. process- Which process is modeled ('Tobramycin', 'BiondVax' etc.)
+      2. preProcessing- selected type of preprocessing
+      3. isFilterData- 1 if filter data is wanted, 0 if not
+      4. relExp(difault is 'All')- list containing experiments where all selected
+                                 variables for model were measured. if 'All', all
+                                 experiments are used.
+    Outputs :
+      1. interpData- a dictionary containing dataframes for relevant experiments. Each data
+                   frame represents one experiment after linear interpulation where rows
+                   are time and columns are measured variables.
+      2. interpDataPP- the same format as data, after pre process protocol according to
+                     selected type.
+    """
     #  load interpolated of un-interpolated data and filter if wanted.
     if process == "Tobramycin":
         if isLoadInterpolated:
@@ -238,13 +279,18 @@ def load_data(process, preProcessing, isFilterData, relExp='All', isLoadInterpol
 
 
 def pre_process_function(data, preProcessing):
-    # Intputs :
-    #   1. data (similar to interpData in "load_data")- a dictionary containing dataframes for
-    #                relevant experiments. Each data frame represents one experiment after linear
-    #                interpo lation where rows are time and columns are measured variables.
-    #   2. preProcessing- Type of preprocessing technique.
-    # Outputs :
-    #   1. dataPP- same format as data, after preprocessing technique activated.
+    """
+        Description:
+        A function which conducts pre processing to the data, according to the selected
+        type by the user
+        Inputs :
+          1. data (similar to interpData in "load_data")- a dictionary containing dataframes for
+                       relevant experiments. Each data frame represents one experiment after linear
+                       interpo lation where rows are time and columns are measured variables.
+          2. preProcessing- Type of preprocessing technique.
+        Outputs :
+          1. dataPP- same format as data, after preprocessing technique activated.
+    """
     dataPP = {}
     dataCombined = pd.DataFrame()
     numOfMeasVec = []
@@ -283,11 +329,15 @@ def pre_process_function(data, preProcessing):
     return dataPP,scale1
 
 def data_interp_df(allData):
-# Inputs:
-#   1. data- a dictionary containing dataframe for each experiment
-# Outputs:
-#   1. interpDataOrginized- same structure as data, after interpolation
-#   with one minute interval
+    """
+    Description:
+    A function which interpolates the data.
+    Inputs:
+      1. data- a dictionary containing dataframe for each experiment
+    Outputs:
+      1. interpDataOrginized- same structure as data, after interpolation
+      with one minute interval
+    """
     interpData = dict()  # empty data frame
     interpDataOrginized = dict()
     for exp in allData.keys():
@@ -310,15 +360,19 @@ def data_interp_df(allData):
     return interpDataOrginized
 
 def meas_creator(interpDataPP, pref):
-    # Inputs:
-    #   1. interpDataPP- a dictionary containing dataframes for relevant experiments. Each data frame represents one
-    #                   experiment after linear interpulation where rows are time and columns are measured variables.
-    #   2. pref- preferences dictionary
-    # Outputs:
-    #   1. dataMeasurements- same structure as interpDataPP, where each experiment holds mean data-frame for every hour.
-    #                        This will be used to train the linear model of each modeled variable. number of rows for
-    #                        every data frame is the length in hours of the relevant experiment.
-
+    """
+    Description:
+    A function which takes interpolated data and creates a set of measurements for each
+    experiment, with interval of 1 hour.
+    Inputs:
+      1. interpDataPP- a dictionary containing dataframes for relevant experiments. Each data frame represents one
+                      experiment after linear interpulation where rows are time and columns are measured variables.
+      2. pref- preferences dictionary
+    Outputs:
+      1. dataMeasurements- same structure as interpDataPP, where each experiment holds mean data-frame for every hour.
+                           This will be used to train the linear model of each modeled variable. number of rows for
+                           every data frame is the length in hours of the relevant experiment.
+    """
     dataMeasurements = {}
     for exp in interpDataPP.keys():
         # Run over each hour of the experiment. inside each hour, compute the average of +- 30 min for each measurement
@@ -345,11 +399,16 @@ def meas_creator(interpDataPP, pref):
 
 
 def create_combinations(pref):
-# Inputs:
-#   1. pref- Preferences dictionary
-# Outputs:
-#   1. Combinations- A dictionary, containing all Hyper parameters combinations to be executed for this modeled
-#   variable. Hyper parameters could be- variables of the linear eqations, distance input, fraction etc.
+    """
+    Description:
+    A function which creates combinations of hyper parameters according to the preferences
+    selected by the user.
+    Inputs:
+      1. pref- Preferences dictionary
+    Outputs:
+      1. Combinations- A dictionary, containing all Hyper parameters combinations to be executed for this modeled
+      variable. Hyper parameters could be- variables of the linear eqations, distance input, fraction etc.
+    """
     allFeatForModel = pref['Variables'] + pref['Data variables']
     featuresOptions = sum([list(map(list, combinations(allFeatForModel, i)))
                            for i in range(len(allFeatForModel) + 1)], [])
@@ -364,17 +423,22 @@ def create_combinations(pref):
 
 
 def devide_data_comb(dataMeasurements,trainNames,testNames):
-# Inputs:
-#   1. dataMeasurements-  A dictionary containing dataframes for relevant experiments. Each experiment holds mean data-
-#                         frame for every hour. This will be used to train the linear model of each modeled variable.
-#                         number of rows for every data frame is the length in hours of the relevant experiment.
-#   2. trainNames- Names of experiments currently selected for train data.
-#   3. testNames - Names of experiments currently selected for test data.
-# Outputs:
-#   1. trainData- Dictionary containing data frames of data for selected training experiments.
-#   2. testData- Dictionary containing data frames of data for selected test experiments.
-#   3. trainNames- Names of experiments currently selected for train data.
-#   4. testNames - Names of experiments currently selected for test data.
+    """
+    Description:
+    A function which changes the trainData/testData combinations, in order to allow
+    the cross validation concept.
+    Inputs:
+      1. dataMeasurements-  A dictionary containing dataframes for relevant experiments. Each experiment holds mean data-
+                            frame for every hour. This will be used to train the linear model of each modeled variable.
+                            number of rows for every data frame is the length in hours of the relevant experiment.
+      2. trainNames- Names of experiments currently selected for train data.
+      3. testNames - Names of experiments currently selected for test data.
+    Outputs:
+      1. trainData- Dictionary containing data frames of data for selected training experiments.
+      2. testData- Dictionary containing data frames of data for selected test experiments.
+      3. trainNames- Names of experiments currently selected for train data.
+      4. testNames - Names of experiments currently selected for test data.
+    """
     stepSize = 1 #How many experiments are moving from train to test every iteration
     trainNames.extend(testNames[:stepSize])
     testNames.extend(trainNames[:stepSize])
@@ -385,27 +449,24 @@ def devide_data_comb(dataMeasurements,trainNames,testNames):
 
     return trainData, testData, trainNames, testNames
 
-def setPreferences():
-    # output:
-    # pref- a dictionary containing all relevant preferences for
-    #       next run (each preference is either a number or a string)
 
-    # Run GUI function to determine preferences
-    pref = linear_model_GUI()
-
-    # Decide fraction options to test according to input from GUI
-    if pref['Fraction maximal value']-pref['Fraction minimal value'] < 0.4:
-        pref['fracOptions'] = np.arange(pref['Fraction minimal value'], pref['Fraction maximal value'] + 0.05, 0.05)
-    else:
-        pref['fracOptions'] = np.arange(pref['Fraction minimal value'], pref['Fraction maximal value'] + 0.1, 0.1)
-
-    # Add aditional preferences
-    pref['featuresDist'] = ['Time']
-    pref['Combinations'] = create_combinations(pref)
-    pref['variables'] = ['Product']
-    return pref
 
 def combineData(trainData, testData, isTestCombine=True):
+    """
+    Description:
+    A function which takes trainData and testData dictionaries, and creates for each of them
+        a data frame where all the experiments are concatenated one after the other.
+    Inputs:
+      1. trainData- Dictionary containing data frames of data for selected training experiments.
+      2. testData- Dictionary containing data frames of data for selected test experiments.
+      3. isTestCombine - True if you want to concatenate both train and test, False if only
+                         test is wanted.
+    Outputs:
+      1. trainDataCombined- Dataframe containing all data for selected training experiments,
+                            concatenated one after the other.
+      2. testDataCombined- Dataframe containing all data for selected test experiments,
+                            concatenated one after the other.
+    """
     trainDataCombined = pd.DataFrame()
     testDataCombined = pd.DataFrame()
     for exp in trainData.keys():
