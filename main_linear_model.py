@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
 
     # Display results of validation experiments for best configuration (data VS model)
-    show_results(scale_params,modeledVars, interpDataPPValid, pref, gold_mean)
+    show_results(scale_params, modeledVars, interpDataPPValid, pref, gold_mean, results)
     q=2
     # Next step is to find the variables which reduces model's accuracy. could be by taking out one variable from the model
     # each time and finding the improvement in "fullModelScore".

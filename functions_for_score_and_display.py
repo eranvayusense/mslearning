@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-def show_results(scale_params,modeledVars, validationData, pref, gold_mean):
+def show_results(scale_params, modeledVars, validationData, pref, gold_mean, results):
 # Discription:
 #   A function which displays the modeled values againts actual measurements for all test experiments.
 # Inputs:
@@ -17,12 +17,15 @@ def show_results(scale_params,modeledVars, validationData, pref, gold_mean):
     numOfVar = len(pref['Variables'])
     numOfRows = int(math.ceil(numOfVar/2))
     for exp in modeledVars.keys():
-        plt.figure()
+        fig = plt.figure()
+        fig.suptitle('Experiment: ' + exp + ', score: ' + str(round(gold_mean[0], 2)), fontsize=18)
         for varIdx, varName in enumerate(pref['Variables'], start=1):
             plt.subplot(numOfRows, 2, varIdx)
             plt.plot(validationData[exp]['TimeMeas'],
                      validationData[exp][varName]*scale_params[varName][1]+scale_params[varName][0],
                      modeledVars[exp][varName]*scale_params[varName][1]+scale_params[varName][0])
-            plt.title([varName+', gold='+str(gold_mean)])
+            plt.title(varName + ', Features=' + str(results[varName]['bestParams']['features']) + '\n, distance=' +
+                      str(results[varName]['bestParams']['featuresDist']) + ', Fraction=' +
+                      str(results[varName]['bestParams']['frac']), fontsize=9)
             plt.legend(['Measured data', 'Modeled data'])
 
