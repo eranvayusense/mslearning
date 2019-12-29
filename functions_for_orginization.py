@@ -323,7 +323,10 @@ def pre_process_function(data, preProcessing):
     scale1= pd.DataFrame()
     for var in varNames[:-1]:
         try:
-            scale1[var] = [dataCombined[var].median(), scipy.stats.iqr(dataCombined[var])]
+            if preProcessing == 'scaling (0-1)':
+                scale1[var] = [dataCombined[var].min(),dataCombined[var].max()]
+            else:
+                scale1[var] = [dataCombined[var].median(), scipy.stats.iqr(dataCombined[var])]
         except:
             dd=1
     return dataPP,scale1

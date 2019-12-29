@@ -20,7 +20,13 @@ def show_results(scale_params,modeledVars, validationData, pref, gold_mean):
         plt.figure()
         for varIdx, varName in enumerate(pref['Variables'], start=1):
             plt.subplot(numOfRows, 2, varIdx)
-            plt.plot(validationData[exp]['TimeMeas'],
+            if  pref['preProcessing type']=='scaling (0-1)':
+                scale11=1/(scale_params[varName][1]-scale_params[varName][0])
+                plt.plot(validationData[exp]['TimeMeas'],
+                         (validationData[exp][varName]+scale_params[varName][0]*scale11)/scale11,
+                         (modeledVars[exp][varName]+scale_params[varName][0]*scale11)/scale11)
+            else:
+                plt.plot(validationData[exp]['TimeMeas'],
                      validationData[exp][varName]*scale_params[varName][1]+scale_params[varName][0],
                      modeledVars[exp][varName]*scale_params[varName][1]+scale_params[varName][0])
             plt.title([varName+', gold='+str(gold_mean)])
