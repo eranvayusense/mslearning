@@ -268,9 +268,10 @@ def polyfit_nd(trainModelVar, trainResults, degree, sigz=None, weights=None):
     c2 = np.ones_like(a2)
     # c_test= np.ones_like(a)
     # k = 0
-    L1 = np.array([[0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0],
-                   [0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0], [0, 0, 0, 0, 1, 0, 0, 0],
-                   [0, 0, 0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 1]])
+    L1 = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+                   [0, 0, 1, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+                   [0, 0, 0, 0, 0, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+                   [0, 0, 0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]])
     # re=2**X.shape[1]
 
     # for r1 in range(npol):# loop on config
@@ -319,9 +320,10 @@ def polyfit_nd_coeff(trainModelVar, trainResults, testModelVar, degree, sigz=Non
     c_test2= np.ones_like(a2)
     k = 0
     #X=np.column_stack((x, y));
-    L1 = np.array([[0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0],
-                   [0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0], [0, 0, 0, 0, 1, 0, 0, 0],
-                   [0, 0, 0, 0, 0, 1, 0, 0], [0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 1]])
+    L1 = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+                   [0, 0, 1, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+                   [0, 0, 0, 0, 0, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+                   [0, 0, 0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]])
     #re=2**X.shape[1]
     # for r1 in range(npol):  # loop on config
     #     for col in range(trainModelVar.shape[1]):# loop on vars
@@ -377,67 +379,65 @@ def run_and_test_full_model(pref, results, modelingDataCombined, validationData)
       1. modeledVars- Dictionary containing data frames for each test experiment, with all modeled variable values.
     """
     # Initial conditions and constants
-    modeledVars = {}
 
 
-    for exp in list(validationData.keys())[0:1]:# validate only the first experiment. eran
-        #  Create a Dictionary containing relevant data for linear modeling of each modeled variable.
-        dataDict = {}
+    #  Create a Dictionary containing relevant data for linear modeling of each modeled variable.
+    dataDict = {}
+    for var in pref['Variables']:
+        delVariableName = var + '_del'
+        dataDict[var] = {}
+        bestParams = results[var]['bestParams']
+        # dataframe containing all non nan train measurements, for relevant features and the modeled variable
+        allRelTrainDataInit = pd.concat([modelingDataCombined[bestParams['features']],
+                                         modelingDataCombined[bestParams['featuresDist']],
+                                         modelingDataCombined[delVariableName]], axis=1).dropna()
+
+        allModelingData = allRelTrainDataInit.T.drop_duplicates().T  # Remove duplications from "allRelTrainDataInit" dataframe
+
+        dataDict[var]['relTrainData'] = allModelingData[bestParams['features']].to_numpy()  # relevant features for linear equation.
+        dataDict[var]['trainDistVar'] = allModelingData[bestParams['featuresDist']].to_numpy()  # relevant distance values for LLR algorithm.
+        dataDict[var]['trainResults'] = allModelingData[delVariableName].to_numpy()  # train delta values of modeled variable
+
+
+    Settings, Const, modeledVars = simulation_initialization(validationData, pref)
+
+    currModelStateInit = pd.concat([modeledVars.iloc[0], validationData[pref['Data variables']].iloc[0],
+                               validationData[pref['featuresDist']].iloc[0]], axis=0)  #  vector containing current relevant modeled values and controlled parameters
+    # Remove duplications from "allRelTrainDataInit" dataframe
+    currModelNames = list(currModelStateInit.index)
+    nameIdx = []
+    nameVec = []
+    for idx in range(len(currModelNames)):
+        if currModelNames[idx] not in nameVec:
+            nameIdx.append(idx)
+            nameVec.append(currModelNames[idx])
+    currModelState = currModelStateInit.iloc[nameIdx]
+
+    t_end=modeledVars.index[-1]
+    # run model every time step for all modeled variables
+    for t in range(0, t_end, Settings['DT']):  #  start from t=1[minutes]
+        currModelState[pref['Data variables']] =\
+            validationData[pref['Data variables']].iloc[t]
+        #  If featuresDist is a modeled parameter, we should not update it from data!!
+        currModelState[pref['featuresDist']] = validationData[pref['featuresDist']].iloc[t]
+        dt1 = 20
         for var in pref['Variables']:
-            delVariableName = var + '_del'
-            dataDict[var] = {}
-            bestParams = results[var]['bestParams']
-            # dataframe containing all non nan train measurements, for relevant features and the modeled variable
-            allRelTrainDataInit = pd.concat([modelingDataCombined[bestParams['features']],
-                                             modelingDataCombined[bestParams['featuresDist']],
-                                             modelingDataCombined[delVariableName]], axis=1).dropna()
+            if t % dt1:
+                modeledVars[var].iloc[t+1] =modeledVars[var].iloc[t]
 
-            allModelingData = allRelTrainDataInit.T.drop_duplicates().T  # Remove duplications from "allRelTrainDataInit" dataframe
+            else:
+                bestParams = results[var]['bestParams']
+                relTestData = currModelState[bestParams['features']].to_numpy()
+                testDistVar = currModelState[bestParams['featuresDist']].to_numpy()
+                deltaVar, x = loess_nd_test_point\
+                            (dataDict[var]['relTrainData'], dataDict[var]['trainDistVar'],
+                             dataDict[var]['trainResults'], relTestData,
+                             testDistVar, frac=bestParams['frac'])
+                modeledVars[var].iloc[t+1] = \
+                        modeledVars[var].iloc[t] + dt1*deltaVar/60
+            currModelState[var] = modeledVars[var].iloc[t+1]
 
-            dataDict[var]['relTrainData'] = allModelingData[bestParams['features']].to_numpy()  # relevant features for linear equation.
-            dataDict[var]['trainDistVar'] = allModelingData[bestParams['featuresDist']].to_numpy()  # relevant distance values for LLR algorithm.
-            dataDict[var]['trainResults'] = allModelingData[delVariableName].to_numpy()  # train delta values of modeled variable
-
-
-        Settings, Const, modeledVars[exp] = simulation_initialization(validationData[exp], pref)
-
-        currModelStateInit = pd.concat([modeledVars[exp].iloc[0], validationData[exp][pref['Data variables']].iloc[0],
-                                   validationData[exp][pref['featuresDist']].iloc[0]], axis=0)  #  vector containing current relevant modeled values and controlled parameters
-        # Remove duplications from "allRelTrainDataInit" dataframe
-        currModelNames = list(currModelStateInit.index)
-        nameIdx = []
-        nameVec = []
-        for idx in range(len(currModelNames)):
-            if currModelNames[idx] not in nameVec:
-                nameIdx.append(idx)
-                nameVec.append(currModelNames[idx])
-        currModelState = currModelStateInit.iloc[nameIdx]
-
-        t_end=modeledVars[exp].index[-1]
-        # run model every time step for all modeled variables
-        for t in range(0, t_end, Settings['DT']):  #  start from t=1[minutes]
-            currModelState[pref['Data variables']] =\
-                validationData[exp][pref['Data variables']].iloc[t]
-            #  If featuresDist is a modeled parameter, we should not update it from data!!
-            currModelState[pref['featuresDist']] = validationData[exp][pref['featuresDist']].iloc[t]
-            dt1 = 20
-            for var in pref['Variables']:
-                if t % dt1:
-                    modeledVars[exp][var].iloc[t+1] =modeledVars[exp][var].iloc[t]
-
-                else:
-                    bestParams = results[var]['bestParams']
-                    relTestData = currModelState[bestParams['features']].to_numpy()
-                    testDistVar = currModelState[bestParams['featuresDist']].to_numpy()
-                    deltaVar, x = loess_nd_test_point\
-                                (dataDict[var]['relTrainData'], dataDict[var]['trainDistVar'],
-                                 dataDict[var]['trainResults'], relTestData,
-                                 testDistVar, frac=bestParams['frac'])
-                    modeledVars[exp][var].iloc[t+1] = \
-                            modeledVars[exp][var].iloc[t] + dt1*deltaVar/60
-                currModelState[var] = modeledVars[exp][var].iloc[t+1]
-    gold_mean = gold_hyper(pref, validationData, modeledVars)
-    return modeledVars, gold_mean
+    return modeledVars
 
 
 def gold_hyper(pref, testData, modeledVars):

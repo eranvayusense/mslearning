@@ -58,8 +58,25 @@ if __name__ == '__main__':
     dataMeasurementsCombined, empty = combineData(dataMeasurements, [], isTestCombine=False)
 
     # Run full rolling model
-    modeledVars, gold_mean =\
-        run_and_test_full_model(pref, results, dataMeasurementsCombined, interpDataPPValid)
+    modeledVars = {}
+    if pref['Is run parallel']:  # Run parallel computing
+
+        pool = mp.Pool(mp.cpu_count())  # Raise all available processors
+        modeledVarsList = \
+            pool.starmap(run_and_test_full_model,
+                         [(pref, results, dataMeasurementsCombined, interpDataPPValid[exp])
+                          for exp in interpDataPPValid.keys()])
+        pool.close()
+        modeledVars = list_to_dict(modeledVarsList, list(interpDataPPValid.keys()))
+    else:
+        for exp in list(interpDataPPValid.keys())[0:1]:# validate only the first experiment. eran
+            modeledVars1 =\
+                run_and_test_full_model(pref, results, dataMeasurementsCombined, interpDataPPValid[exp])
+
+
+    gold_mean = gold_hyper(pref, interpDataPPValid, modeledVars)
+
+
 
     # Display results of validation experiments for best configuration (data VS model)
     show_results(scale_params,modeledVars, interpDataPPValid, pref, gold_mean)

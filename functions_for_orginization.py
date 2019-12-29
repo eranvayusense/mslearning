@@ -480,3 +480,10 @@ def combineData(trainData, testData, isTestCombine=True):
     else:
         testDataCombined = testData
     return trainDataCombined, testDataCombined
+
+
+def list_to_dict(modeledVarsList, expNames):
+    modeledVars = {}
+    for idx in range(0, len(modeledVarsList)):
+        modeledVars[expNames[idx]] = modeledVarsList[idx]
+    return modeledVars
