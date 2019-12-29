@@ -21,7 +21,13 @@ def show_results(scale_params, modeledVars, validationData, pref, gold_mean, res
         fig.suptitle('Experiment: ' + exp + ', score: ' + str(round(gold_mean[0], 2)), fontsize=18)
         for varIdx, varName in enumerate(pref['Variables'], start=1):
             plt.subplot(numOfRows, 2, varIdx)
-            plt.plot(validationData[exp]['TimeMeas'],
+            if  pref['preProcessing type']=='scaling (0-1)':
+                scale11=1/(scale_params[varName][1]-scale_params[varName][0])
+                plt.plot(validationData[exp]['TimeMeas'],
+                         (validationData[exp][varName]+scale_params[varName][0]*scale11)/scale11,
+                         (modeledVars[exp][varName]+scale_params[varName][0]*scale11)/scale11)
+            else:
+                plt.plot(validationData[exp]['TimeMeas'],
                      validationData[exp][varName]*scale_params[varName][1]+scale_params[varName][0],
                      modeledVars[exp][varName]*scale_params[varName][1]+scale_params[varName][0])
             plt.title(varName + ', Features=' + str(results[varName]['bestParams']['features']) + '\n, distance=' +
