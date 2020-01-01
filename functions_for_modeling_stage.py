@@ -45,7 +45,7 @@ def run_var_model(variable, paramComb, trainData, testData):
     print('reg run: ' + str(time.time() - tParallel))
     return errorVal
             # np.mean(np.abs((z_smoot_test[:, idxFeat, idxFilt] - titterTestNP) / (titterTestNP + z_smoot_test[:, idxFeat, idxFilt])))
-def run_var_model_mat(variable, paramComb, trainData, testData):
+def run_var_model_mat(variable, paramComb, trainData, testData,scale_params):
 # Inputs:
 #   1. variable-  Name of the variable to model.
 #   2. paramComb- Dictionary containing variables for linear eqation, variables for distance and fraction value for
@@ -69,7 +69,7 @@ def run_var_model_mat(variable, paramComb, trainData, testData):
 
     # dataframe containing all non nan test measurements, for relevant features and the modeled variable
     allRelTestDataInit = pd.concat([testData[paramComb['features']], testData[paramComb['featuresDist']],
-                                testData[delVariableName]], axis=1).dropna()
+                                testData[delVariableName],testData[variable]], axis=1).dropna()
 
     allRelTestData = allRelTestDataInit.T.drop_duplicates().T  # Remove duplications from "allRelTrainDataInit" dataframe
 
@@ -92,8 +92,8 @@ def run_var_model_mat(variable, paramComb, trainData, testData):
     errorVal = 0  # Initialize error value
    # print('mat1 run: ' + str(time.time() - tParallel))
     tParallel=time.time()
-    zout1, wout = loess_nd_test_point_mat(allRelTestData, paramComb, relTrainData, trainDistVar,
-                                          trainResults, dist, w, frac=paramComb['frac'])
+    zout1, wout = loess_nd_test_point_mat(allRelTestData, paramComb['features'], relTrainData, trainDistVar,
+                                          trainResults, dist, w,scale_params[variable],variable,allRelTestData[variable], frac=paramComb['frac'])
     for index, row in allRelTestData.iterrows():
         #relTestData = row[paramComb['features']].to_numpy()
         #testDistVar = row[paramComb['featuresDist']].to_numpy()
@@ -105,8 +105,8 @@ def run_var_model_mat(variable, paramComb, trainData, testData):
     return errorVal
             # np.mean(np.abs((z_smoot_test[:, idxFeat, idxFilt] - titterTestNP) / (titterTestNP + z_smoot_test[:, idxFeat, idxFilt])))
 
-def loess_nd_test_point_mat(allRelTestData,paramComb,trainModelVar, trainDistVar, trainResults,
-                       dist_all,w_all, frac=0.5, degree=1, sigz=None, npoints=None):
+def loess_nd_test_point_mat(allRelTestData,paramComb_fetchers,trainModelVar, trainDistVar, trainResults,
+                       dist_all,w_all,scale_params,var,varT,frac=0.5, degree=1, sigz=None, npoints=None):
     """
 # Inputs:
 #   1. trainModelVar- Data frame for all linear modeling variables values in training stock. each row represents
@@ -138,7 +138,7 @@ def loess_nd_test_point_mat(allRelTestData,paramComb,trainModelVar, trainDistVar
     #w = np.argsort(dist)[:npoints]
     zout=np.zeros([1,allRelTestData.shape[0]]) ; wout=np.zeros([1,allRelTestData.shape[0]])
     for index, row in allRelTestData.iterrows():
-        testModelVar = row[paramComb['features']].to_numpy()
+        testModelVar = row[paramComb_fetchers].to_numpy()
         dist=dist_all[:, index]
         w=w_all[:, index]
         distWeights = (1 - (dist[w]/dist[w[-1]])**3)**3  # tricube function distance weights
@@ -163,7 +163,7 @@ def loess_nd_test_point_mat(allRelTestData,paramComb,trainModelVar, trainDistVar
             bad = np.where(biWeights < 0.34)[0]  # 99% confidence outliers
             if np.array_equal(badOld, bad):
                 break
-        coeff, c_test = polyfit_nd_coeff(trainModelVar[w, :], trainResults[w], testModelVar, degree, weights=totWeights)
+        coeff, c_test = polyfit_nd_coeff(trainModelVar[w, :], trainResults[w], testModelVar,scale_params,var,varT[ index], degree, weights=totWeights)
 
         zout[0, index] = c_test.dot(coeff)# zfit[0]
         wout[0, index]= biWeights[0]
@@ -171,73 +171,6 @@ def loess_nd_test_point_mat(allRelTestData,paramComb,trainModelVar, trainDistVar
 
     return zout, wout
 
-def loess_nd_test_point(trainModelVar, trainDistVar, trainResults, testModelVar, testdistVar,
-                        frac=0.5, degree=1, sigz=None, npoints=None):
-    """
-    Description:
-    A function which calculates the predicted value of a specific test point, according to the
-    point's features, and according to train data.
-    Inputs:
-      1. trainModelVar- Data frame for all linear modeling variables values in training stock. each row represents
-                        a measurements at specific time.
-      2. trainDistVar- Data frame for all distance variables values in training stock.
-      3. trainResults- Modeled variable actual values for each measurement
-      4. testModelVar- List of linear modeling variables representing one test measurement
-      5. testDistVar- List of distance variables representing one test measurement
-      6. testResult- Modeled variable actual values for each measurement
-      7. frac- Float value representing the fraction of points building a linear model for a given test measurement
-      8. degree- Integer representing the degree of the equation (degree=1 is linear equation)
-      9. rescale- binary value (True/False) for rescaling the data before creating the model
-      10. sigz- 1-sigma errors for the Z values. If this keyword is used the biweight fit is done assuming those errors.
-                If this keyword is *not* used, the biweight fit determines the errors in Z from the scatter of the
-                neighbouring points.
-    Outputs:
-      1. zout- Modeled values for wanted variable to model.
-      2. wout- Weights of importance for algorithm according to distace
-    """
-
-
-    if frac == 0:
-        return trainResults, np.ones_like(trainResults)
-
-    if npoints is None:
-        npoints = int(np.ceil(frac * trainModelVar[:, 0].size))
-
-    distSumSqr = 0
-    for varForDist in range(testdistVar.size):
-        distVarSqr = (trainDistVar[:, varForDist] - testdistVar[varForDist]) ** 2
-        distSumSqr += distVarSqr
-    dist = np.sqrt(distSumSqr)
-    w = np.argsort(dist)[:npoints]
-    distWeights = (1 - (dist[w]/dist[w[-1]])**3)**3  # tricube function distance weights
-    zfit = polyfit_nd(trainModelVar[w, :], trainResults[w], degree, weights=distWeights)
-
-    # Use errors if those are known.
-    bad = []
-    for p in range(10):  # do at most 10 iterations    moti
-
-        if sigz is None:  # Errors are unknown
-            aerr = np.abs(zfit - trainResults[w])  # Note ABS()
-            mad = np.median(aerr)  # Characteristic scale
-            uu = (aerr/(6*mad))**2  # For a Gaussian: sigma=1.4826*MAD
-        else:  # Errors are assumed known
-            uu = ((zfit - trainResults[w])/(4*sigz[w]))**2  # 4*sig ~ 6*mad
-
-        uu = uu.clip(0, 1)
-        biWeights = (1 - uu)**2
-        totWeights = distWeights*biWeights
-        zfit = polyfit_nd(trainModelVar[w, :], trainResults[w], degree, weights=totWeights)
-        badOld = bad
-        bad = np.where(biWeights < 0.34)[0]  # 99% confidence outliers
-        if np.array_equal(badOld, bad):
-            break
-    coeff, c_test = polyfit_nd_coeff(trainModelVar[w, :], trainResults[w], testModelVar, degree, weights=totWeights)
-
-    zout = c_test.dot(coeff)  # zfit[0]
-    wout = biWeights[0]
-
-
-    return zout, wout
 
 def polyfit_nd(trainModelVar, trainResults, degree, sigz=None, weights=None):
     """
@@ -253,6 +186,8 @@ def polyfit_nd(trainModelVar, trainResults, degree, sigz=None, weights=None):
        z = a + b*x + c*x^2 + d*y + e*x*y + f*y^2
 
     """
+    from scipy.optimize import minimize
+    from scipy.optimize import LinearConstraint
     if weights is None:
         if sigz is None:
             sw = 1.
@@ -286,10 +221,14 @@ def polyfit_nd(trainModelVar, trainResults, degree, sigz=None, weights=None):
    # for r1 in range(npol):# loop on config
     bb=np.repeat([[sw]],c2.shape[1],axis=1)
     a2 = c2*bb[0, :, :].T
+
     coeff2 = np.linalg.lstsq(a2, trainResults*sw, rcond=None)[0]
     return c2.dot(coeff2)
+def f1(x,args):
+    a,y = args['aa2'],args['yy1']
+    return sum((a.dot(x)-y)**2)
 
-def polyfit_nd_coeff(trainModelVar, trainResults, testModelVar, degree, sigz=None, weights=None):
+def polyfit_nd_coeff(trainModelVar, trainResults, testModelVar,scale_params,var,varT, degree, sigz=None, weights=None):
     """
     Fit a bivariate polynomial of given DEGREE to a set of points
     (X, Y, Z), assuming errors SIGZ in the Z variable only.
@@ -303,6 +242,8 @@ def polyfit_nd_coeff(trainModelVar, trainResults, testModelVar, degree, sigz=Non
        z = a + b*x + c*x^2 + d*y + e*x*y + f*y^2
 
     """
+    from scipy.optimize import minimize
+    from scipy.optimize import LinearConstraint
     if weights is None:
         if sigz is None:
             sw = 1.
@@ -342,7 +283,16 @@ def polyfit_nd_coeff(trainModelVar, trainResults, testModelVar, degree, sigz=Non
    # for r1 in range(npol):# loop on config
     bb=np.repeat([[sw]], c2.shape[1], axis=1)
     a2 = c2*bb[0, :, :].T
+    # with contrains moti
+    lb=((-scale_params[0]/scale_params[1])-varT)/1 # or /60 ??? moti
     coeff2 = np.linalg.lstsq(a2, trainResults*sw, rcond=None)[0]
+    if coeff2.dot(c_test2[0, :])<lb:
+        y1=trainResults*sw
+        additional1={'aa2':a2,'yy1':y1}
+        linear_constraint = LinearConstraint([c_test2[0, :]], [lb], [np.inf])
+        res = minimize(fun=f1,x0= np.ones([len(c_test2[0, :]),]), args=additional1, method='trust-constr',
+                    constraints=linear_constraint)
+        coeff2=res.x
     return coeff2, c_test2[0, :]
 
 def sort_param_comb(pref, resultsVec):
@@ -365,7 +315,7 @@ def sort_param_comb(pref, resultsVec):
     bestParams = pref['Combinations'][sortedResultsVecIdx[0]]
     return sortedResultsVecIdx, sortedResultsVec, bestParams
 
-def run_and_test_full_model(pref, results, modelingDataCombined, validationData):
+def run_and_test_full_model(pref, results, modelingDataCombined, validationData,scale_params):
     """
     Desciption:
       A function which simulates full rolling model, using the best linear model for each of the selected variables.
@@ -426,13 +376,14 @@ def run_and_test_full_model(pref, results, modelingDataCombined, validationData)
                 modeledVars[var].iloc[t+1] =modeledVars[var].iloc[t]
 
             else:
+                varT=modeledVars[var].iloc[t]
                 bestParams = results[var]['bestParams']
                 relTestData = currModelState[bestParams['features']].to_numpy()
                 testDistVar = currModelState[bestParams['featuresDist']].to_numpy()
-                deltaVar, x = loess_nd_test_point\
-                            (dataDict[var]['relTrainData'], dataDict[var]['trainDistVar'],
+                deltaVar, x = loess_nd_test_point_mat\
+                            (relTestData,bestParams['features'],dataDict[var]['relTrainData'], dataDict[var]['trainDistVar'],
                              dataDict[var]['trainResults'], relTestData,
-                             testDistVar, frac=bestParams['frac'])
+                             testDistVar,scale_params,var,varT, frac=bestParams['frac'])
                 modeledVars[var].iloc[t+1] = \
                         modeledVars[var].iloc[t] + dt1*deltaVar/60
             currModelState[var] = modeledVars[var].iloc[t+1]
@@ -509,7 +460,7 @@ def simulation_initialization(expData, pref):
     return Settings, Const, modeledVarsForExp
 
 
-def run_var_model_for_all_CV(paramComb, pref, dataMeasurements, variable):
+def run_var_model_for_all_CV(paramComb, pref, dataMeasurements, variable,scale_params):
     """
     Desciption:
       A function which runs model for a specific variable for all relevant cross validation
@@ -529,7 +480,7 @@ def run_var_model_for_all_CV(paramComb, pref, dataMeasurements, variable):
             len(pref['Combinations'][paramComb]['features']) < 2:  # moti
         scoreForParamComb = 1e8
     else:
-        CVend = 1  # pref['numCVOpt'] moti
+        CVend = 1 # pref['numCVOpt'] moti
         for CVOpt in range(0, CVend):  # 'numCVOpt' is the number of train/test division options
             trainData, testData, CVTrain, CVTest = \
                 devide_data_comb(dataMeasurements, CVTrain, CVTest)
@@ -544,5 +495,5 @@ def run_var_model_for_all_CV(paramComb, pref, dataMeasurements, variable):
             #                                     trainDataCombined, testDataCombined)
             # Optional upgrade for run_var_model:
             scoreForParamComb += run_var_model_mat(variable, pref['Combinations'][paramComb],
-                                                trainDataCombined, testDataCombined)
+                                                trainDataCombined, testDataCombined,scale_params)
     return scoreForParamComb
