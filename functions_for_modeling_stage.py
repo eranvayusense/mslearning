@@ -138,7 +138,10 @@ def loess_nd_test_point_mat(allRelTestData,paramComb_fetchers,trainModelVar, tra
     #w = np.argsort(dist)[:npoints]
     zout=np.zeros([1,allRelTestData.shape[0]]) ; wout=np.zeros([1,allRelTestData.shape[0]])
     for index, row in allRelTestData.iterrows():
+       # if len(allRelTestData[paramComb_fetchers[0]])>0*1e9:
         testModelVar = row[paramComb_fetchers].to_numpy()
+       # else:
+        #    testModelVar=allRelTestData.to_numpy()
         dist=dist_all[:, index]
         w=w_all[:, index]
         distWeights = (1 - (dist[w]/dist[w[-1]])**3)**3  # tricube function distance weights
@@ -163,7 +166,11 @@ def loess_nd_test_point_mat(allRelTestData,paramComb_fetchers,trainModelVar, tra
             bad = np.where(biWeights < 0.34)[0]  # 99% confidence outliers
             if np.array_equal(badOld, bad):
                 break
-        coeff, c_test = polyfit_nd_coeff(trainModelVar[w, :], trainResults[w], testModelVar,scale_params,var,varT[ index], degree, weights=totWeights)
+        if len(allRelTestData[paramComb_fetchers[0]])>1:
+           varTs=varT[index]
+        else:
+           varTs=varT
+        coeff, c_test = polyfit_nd_coeff(trainModelVar[w, :], trainResults[w], testModelVar,scale_params,var,varTs, degree, weights=totWeights)
 
         zout[0, index] = c_test.dot(coeff)# zfit[0]
         wout[0, index]= biWeights[0]
@@ -284,7 +291,7 @@ def polyfit_nd_coeff(trainModelVar, trainResults, testModelVar,scale_params,var,
     bb=np.repeat([[sw]], c2.shape[1], axis=1)
     a2 = c2*bb[0, :, :].T
     # with contrains moti
-    lb=((-scale_params[0]/scale_params[1])-varT)/1 # or /60 ??? moti
+    lb=(((0.03-scale_params[0])/scale_params[1])-varT)/1 # or /60 ??? moti
     coeff2 = np.linalg.lstsq(a2, trainResults*sw, rcond=None)[0]
     if coeff2.dot(c_test2[0, :])<lb:
         y1=trainResults*sw
@@ -362,7 +369,7 @@ def run_and_test_full_model(pref, results, modelingDataCombined, validationData,
             nameIdx.append(idx)
             nameVec.append(currModelNames[idx])
     currModelState = currModelStateInit.iloc[nameIdx]
-
+    frac1=bestParams['frac']
     t_end=modeledVars.index[-1]
     # run model every time step for all modeled variables
     for t in range(0, t_end, Settings['DT']):  #  start from t=1[minutes]
@@ -376,14 +383,31 @@ def run_and_test_full_model(pref, results, modelingDataCombined, validationData,
                 modeledVars[var].iloc[t+1] =modeledVars[var].iloc[t]
 
             else:
-                varT=modeledVars[var].iloc[t]
+                varT=modeledVars[var].to_numpy()[t]
                 bestParams = results[var]['bestParams']
-                relTestData = currModelState[bestParams['features']].to_numpy()
+                relTestData = currModelState[bestParams['features']]#.to_numpy()
+                allRelTestDataInit = pd.concat([currModelState[bestParams['features']],currModelState[bestParams['featuresDist']]]
+                                , axis=1).dropna()
+
+                allRelTestData = allRelTestDataInit.T.drop_duplicates().T  # Remove duplications from "allRelTrainDataInit" dataframe
+
                 testDistVar = currModelState[bestParams['featuresDist']].to_numpy()
+                test_dist={}; train_dist={}; distSumSqr = 0
+                for varForDist in bestParams['featuresDist']:
+                    test_dist[varForDist] = np.repeat(testDistVar.T,
+                                                      dataDict[var]['trainDistVar'].size, axis=0)
+                    train_dist[varForDist] = np.repeat(dataDict[var]['trainDistVar'],
+                                                       len(testDistVar),
+                                                       axis=1)
+
+                    distVarSqr = (test_dist[varForDist] - train_dist[varForDist]) ** 2
+                    distSumSqr+=distVarSqr
+                npoints=int(np.ceil(bestParams['frac']*dataDict[var]['trainDistVar'][:,0].size))
+                dist=np.sqrt(distSumSqr)
+                w=np.argsort(dist,axis=0)[:npoints]
                 deltaVar, x = loess_nd_test_point_mat\
-                            (relTestData,bestParams['features'],dataDict[var]['relTrainData'], dataDict[var]['trainDistVar'],
-                             dataDict[var]['trainResults'], relTestData,
-                             testDistVar,scale_params,var,varT, frac=bestParams['frac'])
+                            (pd.DataFrame(relTestData).T,bestParams['features'],dataDict[var]['relTrainData'], dataDict[var]['trainDistVar'],
+                             dataDict[var]['trainResults'],dist,w,scale_params[var],var,varT, frac=frac1)
                 modeledVars[var].iloc[t+1] = \
                         modeledVars[var].iloc[t] + dt1*deltaVar/60
             currModelState[var] = modeledVars[var].iloc[t+1]

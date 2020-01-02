@@ -57,14 +57,14 @@ if __name__ == '__main__':
     # create pool of measurements for validation
     dataMeasurementsCombined, empty = combineData(dataMeasurements, [], isTestCombine=False)
 
-    # Run full rolling model
+    # Run full rolling model #########################################################################################################
     modeledVars = {}
     if pref['Is run parallel']:  # Run parallel computing
 
         pool = mp.Pool(mp.cpu_count())  # Raise all available processors
         modeledVarsList = \
             pool.starmap(run_and_test_full_model,
-                         [(pref, results, dataMeasurementsCombined, interpDataPPValid[exp])
+                         [(pref, results, dataMeasurementsCombined, interpDataPPValid[exp],scale_params)
                           for exp in interpDataPPValid.keys()])
         pool.close()
         modeledVars = list_to_dict(modeledVarsList, list(interpDataPPValid.keys()))
