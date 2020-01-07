@@ -34,7 +34,7 @@ if __name__ == '__main__':
             pool = mp.Pool(mp.cpu_count())  # Raise all available processors
             resultsVecForVar = \
                 pool.starmap(run_var_model_for_all_CV,
-                             [(paramComb, pref, dataMeasurements, variable)
+                             [(paramComb, pref, dataMeasurements, variable,scale_params)
                               for paramComb in pref['Combinations'].keys()])
             pool.close()
             results[variable]['resultsVec'] = np.array(resultsVecForVar)
@@ -43,7 +43,7 @@ if __name__ == '__main__':
             results[variable]['resultsVec'] = np.zeros((len(pref['Combinations'])))
             for paramComb in pref['Combinations'].keys():
                  results[variable]['resultsVec'][paramComb] = \
-                    run_var_model_for_all_CV(paramComb, pref, dataMeasurements, variable)
+                    run_var_model_for_all_CV(paramComb, pref, dataMeasurements, variable,scale_params)
 
         modelingTime = time.time() - modelingT0  # Time stamp (toc)
         # Sort all possible Hyper parameters combinations according to 'resultsVec' values and find best configuration
@@ -57,21 +57,21 @@ if __name__ == '__main__':
     # create pool of measurements for validation
     dataMeasurementsCombined, empty = combineData(dataMeasurements, [], isTestCombine=False)
 
-    # Run full rolling model
+    # Run full rolling model #########################################################################################################
     modeledVars = {}
     if pref['Is run parallel']:  # Run parallel computing
 
         pool = mp.Pool(mp.cpu_count())  # Raise all available processors
         modeledVarsList = \
             pool.starmap(run_and_test_full_model,
-                         [(pref, results, dataMeasurementsCombined, interpDataPPValid[exp])
+                         [(pref, results, dataMeasurementsCombined, interpDataPPValid[exp],scale_params)
                           for exp in interpDataPPValid.keys()])
         pool.close()
         modeledVars = list_to_dict(modeledVarsList, list(interpDataPPValid.keys()))
     else:
         for exp in list(interpDataPPValid.keys())[0:1]:# validate only the first experiment. eran
             modeledVars1 =\
-                run_and_test_full_model(pref, results, dataMeasurementsCombined, interpDataPPValid[exp])
+                run_and_test_full_model(pref, results, dataMeasurementsCombined, interpDataPPValid[exp],scale_params)
 
 
     gold_mean = gold_hyper(pref, interpDataPPValid, modeledVars)
