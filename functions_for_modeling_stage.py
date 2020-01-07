@@ -92,7 +92,7 @@ def run_var_model_mat(variable, paramComb, trainData, testData,scale_params):
     errorVal = 0  # Initialize error value
    # print('mat1 run: ' + str(time.time() - tParallel))
     tParallel=time.time()
-    zout1, wout = loess_nd_test_point_mat(allRelTestData, paramComb['features'], relTrainData, trainDistVar,
+    zout1, wout,bias_re = loess_nd_test_point_mat(allRelTestData, paramComb['features'], relTrainData, trainDistVar,
                                           trainResults, dist, w,scale_params[variable],variable,allRelTestData[variable], frac=paramComb['frac'])
     for index, row in allRelTestData.iterrows():
         #relTestData = row[paramComb['features']].to_numpy()
@@ -136,6 +136,7 @@ def loess_nd_test_point_mat(allRelTestData,paramComb_fetchers,trainModelVar, tra
     #     distSumSqr += distVarSqr
     #dist = np.sqrt(testdistVar)
     #w = np.argsort(dist)[:npoints]
+    bias_re=np.zeros([1,allRelTestData.shape[0]])
     zout=np.zeros([1,allRelTestData.shape[0]]) ; wout=np.zeros([1,allRelTestData.shape[0]])
     for index, row in allRelTestData.iterrows():
        # if len(allRelTestData[paramComb_fetchers[0]])>0*1e9:
@@ -170,13 +171,16 @@ def loess_nd_test_point_mat(allRelTestData,paramComb_fetchers,trainModelVar, tra
            varTs=varT[index]
         else:
            varTs=varT
+
         coeff, c_test = polyfit_nd_coeff(trainModelVar[w, :], trainResults[w], testModelVar,scale_params,var,varTs, degree, weights=totWeights)
 
         zout[0, index] = c_test.dot(coeff)# zfit[0]
         wout[0, index]= biWeights[0]
+        bias_retio=(coeff[0]/zout[0, index])
+        if bias_retio<1.4 and bias_retio>0.7:
+            bias_re[0,index]=1
 
-
-    return zout, wout
+    return zout, wout,bias_re
 
 
 def polyfit_nd(trainModelVar, trainResults, degree, sigz=None, weights=None):
@@ -320,6 +324,12 @@ def sort_param_comb(pref, resultsVec):
     sortedResultsVecIdx = resultsVec.argsort()
     sortedResultsVec = resultsVec[sortedResultsVecIdx]
     bestParams = pref['Combinations'][sortedResultsVecIdx[0]]
+    # combine 1st & 2sc configs , moti
+    bestParams_f1 = pref['Combinations'][sortedResultsVecIdx[0]]['features']
+    bestParams_f2 = pref['Combinations'][sortedResultsVecIdx[1]]['features']
+    bestParams_ff=bestParams_f1# +bestParams_f2
+    unique_con = [x for i, x in enumerate(bestParams_ff) if i == bestParams_ff.index(x)]
+    bestParams['features']=unique_con
     return sortedResultsVecIdx, sortedResultsVec, bestParams
 
 def run_and_test_full_model(pref, results, modelingDataCombined, validationData,scale_params):
@@ -369,15 +379,15 @@ def run_and_test_full_model(pref, results, modelingDataCombined, validationData,
             nameIdx.append(idx)
             nameVec.append(currModelNames[idx])
     currModelState = currModelStateInit.iloc[nameIdx]
-    frac1=bestParams['frac']
+    frac1=bestParams['frac'];dt1 = 20
     t_end=modeledVars.index[-1]
     # run model every time step for all modeled variables
-    for t in range(0, t_end, Settings['DT']):  #  start from t=1[minutes]
+    for t in range(0, t_end-(dt1+1), Settings['DT']):  #  start from t=1[minutes]
         currModelState[pref['Data variables']] =\
             validationData[pref['Data variables']].iloc[t]
         #  If featuresDist is a modeled parameter, we should not update it from data!!
         currModelState[pref['featuresDist']] = validationData[pref['featuresDist']].iloc[t]
-        dt1 = 20
+
         for var in pref['Variables']:
             if t % dt1:
                 modeledVars[var].iloc[t+1] =modeledVars[var].iloc[t]
@@ -405,11 +415,12 @@ def run_and_test_full_model(pref, results, modelingDataCombined, validationData,
                 npoints=int(np.ceil(bestParams['frac']*dataDict[var]['trainDistVar'][:,0].size))
                 dist=np.sqrt(distSumSqr)
                 w=np.argsort(dist,axis=0)[:npoints]
-                deltaVar, x = loess_nd_test_point_mat\
+                deltaVar, x ,bias_re= loess_nd_test_point_mat\
                             (pd.DataFrame(relTestData).T,bestParams['features'],dataDict[var]['relTrainData'], dataDict[var]['trainDistVar'],
                              dataDict[var]['trainResults'],dist,w,scale_params[var],var,varT, frac=frac1)
                 modeledVars[var].iloc[t+1] = \
                         modeledVars[var].iloc[t] + dt1*deltaVar/60
+                modeledVars[var+'_biasVel'].iloc[t+1:t+1+dt1]=list(bias_re*np.ones([1,dt1]).T)
             currModelState[var] = modeledVars[var].iloc[t+1]
 
     return modeledVars
@@ -474,6 +485,7 @@ def simulation_initialization(expData, pref):
     # Create a dataframe for future modeled values, with all wanted modeled variables
     for var in pref['Variables']:
         modeledVarsForExp[var] = expData[var].iloc[0] * np.ones([expLength, ])
+        modeledVarsForExp[var+'_biasVel'] = expData[var].iloc[0] * np.zeros([expLength, ])
     # InitCond['X_0'] = 0.15*np.ones([])
     # InitCond['Vl_0'] = 80
     # InitCond['Vg_0'] = Const['TOTAL_VOLUME'] - InitCond['Vl_0']
