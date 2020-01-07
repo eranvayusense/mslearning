@@ -1,0 +1,36 @@
+This file contains a log of data files changes in a chronological way.
+
+allData.p- A dictionary built from a dataframe for each experiment of Online data from 'RND_orginized_data.xls' file located in 'C:\Users\admin\Documents\simulation_upgrade\Data'.
+
+allOfflineData.p- A dictionary built from a dataframe for each experiment of offline data from 'RND_orginized_data.xls' file located in 'C:\Users\admin\Documents\simulation_upgrade\Data'.
+
+
+RnD_Data_5_1.p- A dictionary built from a dataframe for each experiment, created from merging both online and offline data.
+		The indexes (representing time), was multiplied by 60, to achieve units of [Minutes] instead of [Hours].
+		'Time' column was added to the data, containing time in [Minutes] (taken from the index column).
+ 	this file contains the following changes from excel file:
+
+		1. Experiemnts 0319A, 0319B, 0419A, 0419B, 0519A, 0519B, 0619A, 0619B, 0719A, 0719B, 040117, 040217, 330615, 340615, 350615, 370615, 380615, 390615, 410615, 430615, 450815, 470815:
+			 Deleting one or more rows from mixed data, thus making sure that the last measurement contains offline measurements.
+
+		2. Experiments 0519A, 0519B:
+			Take all onlime measurements from t=132 and fill t=133 with them, so that t=133 (fermentation end time) will have both online and offline measurements.
+	
+		3. Experiments 0219A, 0219B:
+			Take all onlime measurements from t=135 and fill t=136 with them, so that t=136 (fermentation end time) will have both online and offline measurements.
+			In addition, move incyte measurement from one measurement before t=135 to the two last measurements (t=135,136), so that incyte measurement will appear in all times.
+
+		4. Experiments 0019_IC, 0019_REF:
+			Insert 0 in t=0 for Tobramycin and Kanamycin.
+
+		5. Experiments 0119_IC, 0119_REF:
+			Insert dextrose concentration value of S=6.5[%] for t=0, according to experiments conducted around this date.
+
+		6. Experiments 410615, 430615:
+			Insert dextrose concentration value of S=4.2[%] for t=0, according to experiments conducted around this date.
+
+		7. Experiment 400615:
+			Change Weight values from t=42 to t=60 from 'bad' to mean of t=41 and t=61.
+			Change dtype of Weight in the dataframe created from series to float64.
+	
+

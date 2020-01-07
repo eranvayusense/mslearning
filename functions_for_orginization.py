@@ -7,6 +7,7 @@ import random
 import scipy
 from itertools import combinations
 from tkinter import *
+import os
 
 
 def setPreferences():
@@ -85,7 +86,7 @@ def linear_model_GUI():
     preProcessingText = Label(firstGUI, text='choose preprocessing technique:', font=('Helvetica', '10', 'bold'))
     preProcessingText.grid(row=2, column=1, sticky=E, padx=10, pady=10)
     preProcessingGUI = StringVar(firstGUI)
-    preProcessingGUI.set("scaling (0-1)")  # default value
+    preProcessingGUI.set("Standardize (Robust scalar)")  # default value
     preProcessingDropDown = OptionMenu(firstGUI, preProcessingGUI, 'No preprocessing', 'scaling (0-1)', 'Standardize (Robust scalar)')
     preProcessingDropDown.grid(row=2, column=2, sticky=E, pady=10)
 
@@ -195,7 +196,7 @@ def linear_model_GUI():
     FracMaxValEntry = Entry(secondGUI)
     FracMaxValEntry.grid(row=2, column=4, pady=10)
     FracMaxValEntry.delete(0, END)
-    FracMaxValEntry.insert(0, "0.35")
+    FracMaxValEntry.insert(0, "0.3")
 
     button = Button(text="Continue", command=passForword2, width=20, height=1, font=('Helvetica', '17'))
     button.place(rely=0.95, relx=0.5, anchor=CENTER)
@@ -243,19 +244,20 @@ def load_data(process, preProcessing, isFilterData, relExp='All', isLoadInterpol
                      selected type.
     """
     #  load interpolated of un-interpolated data and filter if wanted.
+    folderName = 'data'
     if process == "Tobramycin":
         if isLoadInterpolated:
-            fileName = 'RnD_data_interpolated_new.p'
+            fileName = 'RnD_Data_5_1_interp.p'
         else:
-            fileName = 'RnD_data_new.p'
-        with open(fileName, 'rb') as f:
+            fileName = 'RnD_Data_5_1.p'
+        with open(os.path.join(folderName, fileName), 'rb') as f:
             data = pickle.load(f)
-        if isFilterData:
+        if isFilterData &  isLoadInterpolated == 0:
             data = filter_data(data, processType=process)  # Activate smoothing function on data
 
     elif process == "BiondVax":
         fileName = 'RnD_data_new.p'
-        with open(fileName, 'rb') as f:
+        with open(os.path.join(folderName, fileName), 'rb') as f:
             data = pickle.load(f)
         if isFilterData:
             data = filter_data(data, processType=process)  # Activate smoothing function on data
@@ -341,24 +343,45 @@ def data_interp_df(allData):
       1. interpDataOrginized- same structure as data, after interpolation
       with one minute interval
     """
-    interpData = dict()  # empty data frame
+    interpData = dict()  # empty dictionary
     interpDataOrginized = dict()
     for exp in allData.keys():
         interpData[exp] = allData[exp]
-        interpData[exp].index = interpData[exp].index * 60
+        # interpData[exp].index = interpData[exp].index * 60
 
-        for time in range(0, int(interpData[exp].index[-1])):
-            abs_sub = abs(time - interpData[exp].index.to_numpy())
-            min_idx = np.array([np.where(abs_sub == np.amin(abs_sub))[0][0]])
+        # for time in range(0, int(interpData[exp].index[-1])):
+        #     abs_sub = abs(time - interpData[exp].index.to_numpy())
+        #     min_idx = np.array([np.where(abs_sub == np.amin(abs_sub))[0][0]])
+        #     if time == 0:
+        #         nextRow = interpData[exp].loc[interpData[exp].index[min_idx]]
+        #         nextRow.rename(index={nextRow.index[0]: time}, inplace=True)
+        #         interpDataOrginized[exp] = nextRow
+        #     else:
+        #
+        #         nextRow = interpData[exp].loc[interpData[exp].index[min_idx]]
+        #         nextRow.rename(index={nextRow.index[0]: time}, inplace=True)
+        #         interpDataOrginized[exp] = interpDataOrginized[exp].append(nextRow)
+        for time in range(0, int(interpData[exp].index[-1])+1):
             if time == 0:
-                nextRow = interpData[exp].loc[interpData[exp].index[min_idx]]
+                nextRow = pd.DataFrame(interpData[exp].loc[interpData[exp].index[time]]).T
                 nextRow.rename(index={nextRow.index[0]: time}, inplace=True)
                 interpDataOrginized[exp] = nextRow
-            else:
-                nextRow = interpData[exp].loc[interpData[exp].index[min_idx]]
-                nextRow.rename(index = {nextRow.index[0]:time}, inplace=True)
+
+            elif time in interpData[exp].index:
+                nextRow = pd.DataFrame(interpData[exp].loc[time]).T
+                nextRow.rename(index={nextRow.index[0]: time}, inplace=True)
                 interpDataOrginized[exp] = interpDataOrginized[exp].append(nextRow)
-        interpDataOrginized[exp] =interpDataOrginized[exp].interpolate()
+            else:
+                nextRowNP = np.empty((interpData[exp].shape[1], 1))
+                nextRowNP[:] = np.nan
+                nextRow = pd.DataFrame(nextRowNP).T
+                nextRow.columns = list(interpData[exp].columns)
+                nextRow.rename(index={nextRow.index[0]: time}, inplace=True)
+                interpDataOrginized[exp] = interpDataOrginized[exp].append(nextRow)
+        try:
+            interpDataOrginized[exp] =interpDataOrginized[exp].interpolate()
+        except:
+            q=2
 
     return interpDataOrginized
 

@@ -13,7 +13,7 @@ if __name__ == '__main__':
     results = {}  # Dictionary, containing a results dictionary for each variable
 
     # Load interpolated data and pre-process data for relevant experiments
-    interpData, interpDataPP,scale_params = load_data(pref['Process Type'], pref['preProcessing type'],
+    interpData, interpDataPP, scale_params = load_data(pref['Process Type'], pref['preProcessing type'],
                                          pref['Is filter data'], relExp=pref['Relevant experiments'],
                                          isLoadInterpolated=pref['isLoadInterpolated'])
 
