@@ -23,11 +23,12 @@ def show_results(scale_params, modeledVars, validationData, pref, gold_mean, res
             plt.subplot(numOfRows, 2, varIdx)
             c1 = modeledVars[exp][varName + '_biasVel']
 
-            cc = 1 * (modeledVars[exp][varName + '_biasVel'] - min(c1)) / (max(c1) - min(c1))
+            cc = 1*(modeledVars[exp][varName + '_biasVel'] + 1e-8 - min(c1)) / (max(c1) + 1e-8 - min(c1))
             #                cc[0:500]=1.80*cc[0:500]
             plt.scatter(validationData[exp]['TimeMeas'], validationData[exp][varName + '_natural'], s=4)
             plt.scatter(validationData[exp]['TimeMeas'], modeledVars[exp][varName], c=cc, s=4)
             plt.colorbar()
+
             plt.title(varName + ', Features=' + str(results[varName]['bestParams']['features']) + '\n, distance=' +
                       str(results[varName]['bestParams']['featuresDist']) + ', Fraction=' +
                       str(results[varName]['bestParams']['frac']),
