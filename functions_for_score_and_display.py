@@ -21,39 +21,48 @@ def show_results(scale_params, modeledVars, validationData, pref, gold_mean, res
         fig.suptitle('Experiment: ' + exp + ', score: ' + str(round(gold_mean[0], 2)), fontsize=18)
         for varIdx, varName in enumerate(pref['Variables'], start=1):
             plt.subplot(numOfRows, 2, varIdx)
-            c1=modeledVars[exp][varName+'_biasVel']
-            if  pref['preProcessing type']=='scaling (0-1)':
-                scale11=1/(scale_params[varName][1]-scale_params[varName][0])
-                plt.plot(validationData[exp]['TimeMeas'],
-                         (validationData[exp][varName]+scale_params[varName][0]*scale11)/scale11,
-                          s=10)
-                plt.plot(validationData[exp]['TimeMeas'],
-                         (modeledVars[exp][varName]+scale_params[varName][0]*scale11)/scale11,
-                          c=cc ,s=10)
-                plt.colorbar()
-            else:
+            c1 = modeledVars[exp][varName + '_biasVel']
 
+            cc = 1*(modeledVars[exp][varName + '_biasVel'] + 1e-8 - min(c1)) / (max(c1) + 1e-8 - min(c1))
+            #                cc[0:500]=1.80*cc[0:500]
+            plt.scatter(validationData[exp]['TimeMeas'], validationData[exp][varName + '_natural'], s=4)
+            plt.scatter(validationData[exp]['TimeMeas'], modeledVars[exp][varName], c=cc, s=4)
+            plt.colorbar()
 
-                cc=1*(modeledVars[exp][varName+'_biasVel']+1e-8-min(c1))/(max(c1)+1e-8-min(c1))
-#                cc[0:500]=1.80*cc[0:500]
-                plt.scatter(validationData[exp]['TimeMeas'],
-                     validationData[exp][varName]*scale_params[varName][1]+scale_params[varName][0]
-                                                                   ,s=10 )
-                plt.scatter(validationData[exp]['TimeMeas'],
-                        modeledVars[exp][varName]*scale_params[varName][1]+scale_params[varName][0]
-                           ,c=cc ,s=10)
-                plt.colorbar()
-              #        modeledVars[exp][varName]*scale_params[varName][1]+scale_params[varName][0],
-              #              ,cmap='viridis')
-              #           ,c=(np.append(c1.T,c1.T,axis=1)-c1.min())/(c1.max()-c1.min()))
-              #   colorValues = np.array([1, 1, 1, 0, 0]).astype(float)
-              #
-              #   for ind,y,c in zip(np.arange(1,len(validationData[exp]['TimeMeas'])),validationData[exp][varName]*scale_params[varName][1]+scale_params[varName][0], colorValues):
-              #       plt.scatter(validationData[exp]['TimeMeas'][ind], y)#,  color=([0.1843, 0.3098, 0.3098]))
-              # #  plt.show()
             plt.title(varName + ', Features=' + str(results[varName]['bestParams']['features']) + '\n, distance=' +
                       str(results[varName]['bestParams']['featuresDist']) + ', Fraction=' +
                       str(results[varName]['bestParams']['frac']),
                       fontsize=9)
             plt.legend(['Measured data', 'Modeled data'])
+
+#             if pref['preProcessing type'] == 'scaling (0-1)':
+#                 scale11 = 1/(scale_params[varName][1]-scale_params[varName][0])
+#                 plt.plot(validationData[exp]['TimeMeas'],
+#                          (validationData[exp][varName]+scale_params[varName][0]*scale11)/scale11,
+#                          (modeledVars[exp][varName]+scale_params[varName][0]*scale11)/scale11)
+#             else:
+#                 c1 = modeledVars[exp][varName+'_biasVel']
+#
+#                 cc = 1*(modeledVars[exp][varName+'_biasVel']-min(c1))/(max(c1)-min(c1))
+# #                cc[0:500]=1.80*cc[0:500]
+#                 plt.scatter(validationData[exp]['TimeMeas'],
+#                      validationData[exp][varName]*scale_params[varName][1]+scale_params[varName][0]
+#                                                                    ,s=4 )
+#                 plt.scatter(validationData[exp]['TimeMeas'],
+#                         modeledVars[exp][varName]*scale_params[varName][1]+scale_params[varName][0]
+#                             ,c=cc,s=4)
+#                 plt.colorbar()
+#               #        modeledVars[exp][varName]*scale_params[varName][1]+scale_params[varName][0],
+#               #              ,cmap='viridis')
+#               #           ,c=(np.append(c1.T,c1.T,axis=1)-c1.min())/(c1.max()-c1.min()))
+#               #   colorValues = np.array([1, 1, 1, 0, 0]).astype(float)
+#               #
+#               #   for ind,y,c in zip(np.arange(1,len(validationData[exp]['TimeMeas'])),validationData[exp][varName]*scale_params[varName][1]+scale_params[varName][0], colorValues):
+#               #       plt.scatter(validationData[exp]['TimeMeas'][ind], y)#,  color=([0.1843, 0.3098, 0.3098]))
+#               # #  plt.show()
+#             plt.title(varName + ', Features=' + str(results[varName]['bestParams']['features']) + '\n, distance=' +
+#                       str(results[varName]['bestParams']['featuresDist']) + ', Fraction=' +
+#                       str(results[varName]['bestParams']['frac']),
+#                       fontsize=9)
+#             plt.legend(['Measured data', 'Modeled data'])
 

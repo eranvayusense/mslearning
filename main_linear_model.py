@@ -13,16 +13,24 @@ if __name__ == '__main__':
     results = {}  # Dictionary, containing a results dictionary for each variable
 
     # Load interpolated data and pre-process data for relevant experiments
-    interpData, interpDataPP, scale_params = load_data(pref['Process Type'], pref['preProcessing type'],
-                                         pref['Is filter data'], relExp=pref['Relevant experiments'],
+    interpData = load_data(pref['Process Type'], pref['Is filter data'], relExp=pref['Relevant experiments'],
                                          isLoadInterpolated=pref['isLoadInterpolated'])
 
+    # Adding new features to
+    interpDataFull = add_new_features(interpData, pref)
+
+    # Conduct pre-processing according to wanted type and Append
+    interpDataPP, scale_params = pre_process_function(interpDataFull, pref['preProcessing type'])
+
+    # Append variables un-pre-processed data to interpDataPP
+    interpDataPP = append_natural_var(interpDataFull, interpDataPP, pref)
+
     # Define modeling data and validation data
-    interpDataPPModeling = {exp: interpDataPP[exp] for exp in pref['Modeling experiments']}
-    interpDataPPValid = {exp: interpDataPP[exp] for exp in pref['Validation experiments']}
+    interpDataPPModeling, interpDataPPValid =\
+        define_model_valid(interpDataPP, pref)
 
     # Create measurements dictionary for stand alone variable LLR
-    dataMeasurements = meas_creator(interpDataPPModeling, pref)
+    dataMeasurementsPP = meas_creator(interpDataPPModeling, pref)
 
     # Run calibration for rolling model
     for variable in pref['Variables']:  # Run over every modeled variable
@@ -34,7 +42,7 @@ if __name__ == '__main__':
             pool = mp.Pool(mp.cpu_count())  # Raise all available processors
             resultsVecForVar = \
                 pool.starmap(run_var_model_for_all_CV,
-                             [(paramComb, pref, dataMeasurements, variable,scale_params)
+                             [(paramComb, pref, dataMeasurementsPP, variable,scale_params)
                               for paramComb in pref['Combinations'].keys()])
             pool.close()
             results[variable]['resultsVec'] = np.array(resultsVecForVar)
@@ -43,7 +51,7 @@ if __name__ == '__main__':
             results[variable]['resultsVec'] = np.zeros((len(pref['Combinations'])))
             for paramComb in pref['Combinations'].keys():
                  results[variable]['resultsVec'][paramComb] = \
-                    run_var_model_for_all_CV(paramComb, pref, dataMeasurements, variable,scale_params)
+                    run_var_model_for_all_CV(paramComb, pref, dataMeasurementsPP, variable,scale_params)
 
         modelingTime = time.time() - modelingT0  # Time stamp (toc)
         # Sort all possible Hyper parameters combinations according to 'resultsVec' values and find best configuration
@@ -55,7 +63,7 @@ if __name__ == '__main__':
     # according to last CV division and display comparison
 
     # create pool of measurements for validation
-    dataMeasurementsCombined, empty = combineData(dataMeasurements, [], isTestCombine=False)
+    dataMeasurementsCombined, empty = combineData(dataMeasurementsPP, [], isTestCombine=False)
 
     # Run full rolling model #########################################################################################################
     modeledVars = {}
@@ -64,14 +72,14 @@ if __name__ == '__main__':
         pool = mp.Pool(mp.cpu_count())  # Raise all available processors
         modeledVarsList = \
             pool.starmap(run_and_test_full_model,
-                         [(pref, results, dataMeasurementsCombined, interpDataPPValid[exp],scale_params)
+                         [(pref, results, dataMeasurementsCombined, interpDataPPValid[exp], scale_params)
                           for exp in interpDataPPValid.keys()])
         pool.close()
         modeledVars = list_to_dict(modeledVarsList, list(interpDataPPValid.keys()))
     else:
         for exp in list(interpDataPPValid.keys())[0:1]:# validate only the first experiment. eran
             modeledVars1 =\
-                run_and_test_full_model(pref, results, dataMeasurementsCombined, interpDataPPValid[exp],scale_params)
+                run_and_test_full_model(pref, results, dataMeasurementsCombined, interpDataPPValid[exp], scale_params)
 
 
     gold_mean = gold_hyper(pref, interpDataPPValid, modeledVars)

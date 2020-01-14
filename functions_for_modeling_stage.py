@@ -18,7 +18,7 @@ def run_var_model(variable, paramComb, trainData, testData):
       1. errorVal- Sum for all mean errors, comparing data and modeled values for all test
                    data.
     """
-    delVariableName = variable + '_del'  # name for delta value of variable, so that it is different from original name.
+    delVariableName = variable + '_del_natural'  # name for delta value of variable, so that it is different from original name.
 
     # dataframe containing all non nan train measurements, for relevant features and the modeled variable
     allRelTrainData = pd.concat([trainData[paramComb['features']], trainData[paramComb['featuresDist']],
@@ -69,7 +69,7 @@ def run_var_model_mat(pref,variable, paramComb, trainData, testData,scale_params
 
     # dataframe containing all non nan test measurements, for relevant features and the modeled variable
     allRelTestDataInit = pd.concat([testData[paramComb['features']], testData[paramComb['featuresDist']],
-                                testData[delVariableName],testData[variable]], axis=1).dropna()
+                                testData[delVariableName], testData[variable]], axis=1).dropna()
 
     allRelTestData = allRelTestDataInit.T.drop_duplicates().T  # Remove duplications from "allRelTrainDataInit" dataframe
 
@@ -92,15 +92,17 @@ def run_var_model_mat(pref,variable, paramComb, trainData, testData,scale_params
     errorVal = 0  # Initialize error value
    # print('mat1 run: ' + str(time.time() - tParallel))
     tParallel=time.time()
-    zout1, wout,bias_re,bias_vel = loess_nd_test_point_mat(pref,allRelTestData, paramComb['features'], relTrainData, trainDistVar,
-                                          trainResults, dist, w,scale_params[variable],variable,allRelTestData[variable], frac=paramComb['frac'])
+    zout1, wout,bias_re,bias_vel = loess_nd_test_point_mat(pref,allRelTestData, paramComb['features'],
+                                                           relTrainData, trainDistVar, trainResults, dist, w,
+                                                           scale_params[variable], variable,allRelTestData[variable],
+                                                           frac=paramComb['frac'])
     for index, row in allRelTestData.iterrows():
         #relTestData = row[paramComb['features']].to_numpy()
         #testDistVar = row[paramComb['featuresDist']].to_numpy()
         testResult = row[delVariableName]
 
 
-        errorVal += abs(zout1[0,index] - testResult)/(abs(zout1[0,index]) + abs(testResult))
+        errorVal += abs(zout1[index] - testResult)/(abs(zout1[index]) + abs(testResult))
     #print('mat2 run: ' + str(time.time() - tParallel))
     return errorVal
             # np.mean(np.abs((z_smoot_test[:, idxFeat, idxFilt] - titterTestNP) / (titterTestNP + z_smoot_test[:, idxFeat, idxFilt])))
@@ -137,7 +139,7 @@ def loess_nd_test_point_mat(pref,allRelTestData,paramComb_fetchers,trainModelVar
     #dist = np.sqrt(testdistVar)
     #w = np.argsort(dist)[:npoints]
     bias_re=np.zeros([1,allRelTestData.shape[0]])
-    zout=np.zeros([1,allRelTestData.shape[0]]) ; wout=np.zeros([1,allRelTestData.shape[0]])
+    zout=np.zeros([1,allRelTestData.shape[0]]); wout = np.zeros([1,allRelTestData.shape[0]])
     for index, row in allRelTestData.iterrows():
        # if len(allRelTestData[paramComb_fetchers[0]])>0*1e9:
         testModelVar = row[paramComb_fetchers].to_numpy()
@@ -176,17 +178,11 @@ def loess_nd_test_point_mat(pref,allRelTestData,paramComb_fetchers,trainModelVar
 
         zout[0, index] = c_test.dot(coeff)# zfit[0]
         wout[0, index]= biWeights[0]
+
         bias_retio=(coeff[0]/zout[0, index])
-        if bias_retio<1.4 and bias_retio>0.7:
-            end1=int(len(w)*0.25)
-            coeff, c_test = polyfit_nd_coeff(pref,trainModelVar[w[0:end1], :], trainResults[w[0:end1]], testModelVar,scale_params,var,varTs, degree, weights=totWeights[0:end1])
-            zout[0, index] = c_test.dot(coeff)
-            bias_retio=(coeff[0]/zout[0, index])
-            if bias_retio<1.3 and bias_retio>0.7:
-                 bias_re[0,index]=1
-
-
-    return zout, wout,bias_re,bias_retio
+        if bias_retio < 1.3 and bias_retio > 0.7:
+             bias_re[0, index] = 1
+    return zout[0], wout, bias_re, bias_retio
 
 
 def polyfit_nd(trainModelVar, trainResults, degree, sigz=None, weights=None):
@@ -248,7 +244,7 @@ def f1(x,args):
     a,y = args['aa2'],args['yy1']
     return sum((a.dot(x)-y)**2)
 
-def polyfit_nd_coeff(pref,trainModelVar, trainResults, testModelVar,scale_params,var,varT, degree, sigz=None, weights=None):
+def polyfit_nd_coeff(pref, trainModelVar, trainResults, testModelVar,scale_params,var,varT, degree, sigz=None, weights=None):
     """
     Fit a bivariate polynomial of given DEGREE to a set of points
     (X, Y, Z), assuming errors SIGZ in the Z variable only.
@@ -307,9 +303,10 @@ def polyfit_nd_coeff(pref,trainModelVar, trainResults, testModelVar,scale_params
     bb=np.repeat([[sw]], c2.shape[1], axis=1)
     a2 = c2*bb[0, :, :].T
     # with contrains moti
-    lb=(((0.03-scale_params[0])/scale_params[1])-varT)/1 # or /60 ??? moti
-    if pref['preProcessing type']=='scaling (0-1)':
-       lb=-varT+(0.03-scale_params[0])/(scale_params[1]-scale_params[0]) # or /60 ??? moti
+    if pref['preProcessing type'] == 'Standardize (Robust scalar)':
+        lb=(((0.03-scale_params[0])/scale_params[1])-varT)/1 # or /60 ??? moti
+    elif pref['preProcessing type']=='scaling (0-1)':
+        lb=-varT+(0.03-scale_params[0])/(scale_params[1]-scale_params[0]) # or /60 ??? moti
     coeff2 = np.linalg.lstsq(a2, trainResults*sw, rcond=None)[0]
     if coeff2.dot(c_test2[0, :])<lb:
         y1=trainResults*sw
@@ -346,7 +343,7 @@ def sort_param_comb(pref, resultsVec):
     bestParams['features']=unique_con
     return sortedResultsVecIdx, sortedResultsVec, bestParams
 
-def run_and_test_full_model(pref, results, modelingDataCombined, validationData,scale_params):
+def run_and_test_full_model(pref, results, modelingDataCombined, validationData, scale_params):
     """
     Desciption:
       A function which simulates full rolling model, using the best linear model for each of the selected variables.
@@ -365,7 +362,7 @@ def run_and_test_full_model(pref, results, modelingDataCombined, validationData,
     #  Create a Dictionary containing relevant data for linear modeling of each modeled variable.
     dataDict = {}
     for var in pref['Variables']:
-        delVariableName = var + '_del'
+        delVariableName = var + '_del_natural'
         dataDict[var] = {}
         bestParams = results[var]['bestParams']
         # dataframe containing all non nan train measurements, for relevant features and the modeled variable
@@ -379,11 +376,11 @@ def run_and_test_full_model(pref, results, modelingDataCombined, validationData,
         dataDict[var]['trainDistVar'] = allModelingData[bestParams['featuresDist']].to_numpy()  # relevant distance values for LLR algorithm.
         dataDict[var]['trainResults'] = allModelingData[delVariableName].to_numpy()  # train delta values of modeled variable
 
-
     Settings, Const, modeledVars = simulation_initialization(validationData, pref)
 
-    currModelStateInit = pd.concat([modeledVars.iloc[0], validationData[pref['Data variables']].iloc[0],
-                               validationData[pref['featuresDist']].iloc[0]], axis=0)  #  vector containing current relevant modeled values and controlled parameters
+    currModelStateInit = pd.concat([validationData[pref['Variables']].iloc[0], validationData[pref['Data variables']].iloc[0],
+                               validationData[pref['featuresDist']].iloc[0],
+                                   validationData[pref['New features']].iloc[0]], axis=0)  #  vector containing current relevant modeled values and controlled parameters
     # Remove duplications from "allRelTrainDataInit" dataframe
     currModelNames = list(currModelStateInit.index)
     nameIdx = []
@@ -405,14 +402,14 @@ def run_and_test_full_model(pref, results, modelingDataCombined, validationData,
         for var in pref['Variables']:
             delVariableName = var + '_del'
             if t % dt1:
-                modeledVars[var].iloc[t+1] =modeledVars[var].iloc[t]
+                modeledVars[var].iloc[t+1] = modeledVars[var].iloc[t]
 
             else:
                 varT=modeledVars[var].to_numpy()[t]
                 bestParams = results[var]['bestParams']
                 relTestData = currModelState[bestParams['features']]#.to_numpy()
-                allRelTestDataInit = pd.concat([currModelState[bestParams['features']],currModelState[bestParams['featuresDist']]]
-                                , axis=1).dropna()
+                allRelTestDataInit = pd.concat([currModelState[bestParams['features']],
+                                                currModelState[bestParams['featuresDist']]], axis=1, sort=True).dropna()
 
                 allRelTestData = allRelTestDataInit.T.drop_duplicates().T  # Remove duplications from "allRelTrainDataInit" dataframe
 
@@ -426,18 +423,20 @@ def run_and_test_full_model(pref, results, modelingDataCombined, validationData,
                                                        axis=1)
 
                     distVarSqr = (test_dist[varForDist] - train_dist[varForDist]) ** 2
-                    distSumSqr+=distVarSqr
-                npoints=int(np.ceil(bestParams['frac']*dataDict[var]['trainDistVar'][:,0].size))
-                dist=np.sqrt(distSumSqr)
-                w=np.argsort(dist,axis=0)[:npoints]
-                deltaVar, x ,bias_re,bias_vel= loess_nd_test_point_mat\
-                            (pref,pd.DataFrame(relTestData).T,bestParams['features'],dataDict[var]['relTrainData'], dataDict[var]['trainDistVar'],
-                             dataDict[var]['trainResults'],dist,w,scale_params[var],var,varT, frac=frac1)
-                for jj in range(1,1*len(pref['Combinations']),1): # in case of bias go to the next config
+                    distSumSqr += distVarSqr
+                npoints = int(np.ceil(bestParams['frac']*dataDict[var]['trainDistVar'][:, 0].size))
+                dist = np.sqrt(distSumSqr.astype(float))
+                w = np.argsort(dist, axis=0)[:npoints]
+                deltaVar, x, bias_re,bias_vel = loess_nd_test_point_mat\
+                            (pref, pd.DataFrame(relTestData).T, bestParams['features'], dataDict[var]['relTrainData'],
+                             dataDict[var]['trainDistVar'], dataDict[var]['trainResults'], dist,w,scale_params[var],
+                             var, varT, frac=frac1)
+                # for jj in range(1, 1*len(pref['Combinations']), 1): # in case of bias go to the next config
+                for jj in range(1, 10, 1):
                     ii=results[var]['sortedCombinations'][jj]
-                    if bias_vel<0.7 or bias_vel>1.3:
+                    if bias_vel < 0.7 or bias_vel > 1.3:
                         break
-                    if len(pref['Combinations'][ii]['features']) <2:
+                    if len(pref['Combinations'][ii]['features']) < 2:
                         continue
                     allRelTrainDataInitB = pd.concat([modelingDataCombined[pref['Combinations'][ii]['features']],
                                          modelingDataCombined[pref['Combinations'][ii]['featuresDist']],
@@ -448,17 +447,44 @@ def run_and_test_full_model(pref, results, modelingDataCombined, validationData,
                     #dataDict[var]['relTrainData'] = allModelingData[pref['Combinations'][ii]['features']].to_numpy()  # relevant features for linear equation.
                     relTestData = currModelState[pref['Combinations'][ii]['features']]
                     deltaVar, x ,bias_re,bias_vel= loess_nd_test_point_mat\
-                            (pref,pd.DataFrame(relTestData).T,pref['Combinations'][ii]['features'],
+                            (pref, pd.DataFrame(relTestData).T, pref['Combinations'][ii]['features'],
                              allModelingData[pref['Combinations'][ii]['features']].to_numpy(), dataDict[var]['trainDistVar'],
-                             dataDict[var]['trainResults'],dist,w,scale_params[var],var,varT, frac=frac1)
+                             dataDict[var]['trainResults'], dist, w, scale_params[var], var, varT, frac=frac1)
                     demo=2
                 modeledVars[var].iloc[t+1] = \
                         modeledVars[var].iloc[t] + dt1*deltaVar/60
-                modeledVars[var+'_biasVel'].iloc[t+1:t+1+dt1]=list(bias_re*np.ones([1,dt1]).T)
-            currModelState[var] = modeledVars[var].iloc[t+1]
+                modeledVars[var+'_biasVel'].iloc[t+1:t+1+dt1] = list(bias_re*np.ones([1, dt1]).T)
+
+            # Update new features in currModelState
+            currModelState[var + '_del'] = pp_function(deltaVar, pref, scale_params[var])
+            currModelState[var] = pp_function(modeledVars[var].iloc[t+1], pref, scale_params[var])
+
+        for newFeat in pref['New features']:
+            if '_del' not in newFeat:
+                naturalFeatVal = extract_feat(newFeat, modeledVars.iloc[t + 1], pref)
+                currModelState[newFeat] = pp_function(naturalFeatVal, pref, scale_params[newFeat])
 
     return modeledVars
 
+def reverse_pp_function(modeledValPP, pref, scale_params):
+    if pref['preProcessing type'] == 'scaling (0-1)':
+        scaleConst = 1 / (scale_params[1] - scale_params[0])
+        modeledVal = (modeledValPP + scale_params[0] * scaleConst) / scaleConst
+    elif pref['preProcessing type'] == 'Standardize (Robust scalar)':
+        modeledVal = modeledValPP * scale_params[1] + scale_params[0]
+    elif pref['preProcessing type'] == 'No preprocessing':
+        modeledVal = modeledValPP
+    return modeledVal
+
+def pp_function(modeledVal, pref, scale_params):
+    if pref['preProcessing type'] == 'scaling (0-1)':
+        scaleConst = 1 / (scale_params[1] - scale_params[0])
+        modeledValPP = scaleConst * (modeledVal - scale_params[0])
+    elif pref['preProcessing type'] == 'Standardize (Robust scalar)':
+        modeledValPP = (modeledVal - scale_params[0]) / scale_params[1]
+    elif pref['preProcessing type'] == 'No preprocessing':
+        modeledValPP = modeledVal
+    return modeledValPP
 
 def gold_hyper(pref, testData, modeledVars):
     # function gold_hyper calculate the goodness of predicted model (modeledVars) to test data (testData)
@@ -469,11 +495,12 @@ def gold_hyper(pref, testData, modeledVars):
         #expLength = int(round(testData[exp]['TimeMeas'].iloc[-1])) + 1 #  Experiments length in minutes
         gold_var[exp] = pd.DataFrame()
         for var in pref['Variables']:
+            unPPVarName = var + '_natural'
            # calculte goodness of prediction  for spesific exp and specific featchare
-            gold_var[exp][var] = [sum(abs((testData[exp][var]-modeledVars[exp][var])/
-                                      (abs(testData[exp][var]) +
-                                       abs(modeledVars[exp][var]))))/len(testData[exp][var])]
-        gold_mean_comul = gold_mean_comul+gold_var[exp].mean(axis=1)  # assuming uniform weights for the featchers
+            gold_var[exp][var] = [sum(abs((testData[exp][unPPVarName] - modeledVars[exp][var]) /
+                                      (abs(testData[exp][unPPVarName]) +
+                                       abs(modeledVars[exp][var]))))/len(testData[exp][unPPVarName])]
+        gold_mean_comul = gold_mean_comul + gold_var[exp].mean(axis=1)  # assuming uniform weights for the featchers
     gold_mean = gold_mean_comul/len(testData.keys())
     return gold_mean
 
@@ -518,7 +545,7 @@ def simulation_initialization(expData, pref):
     expLength = int(round(expData['TimeMeas'].iloc[-1])) + 1 #  Experiments length in minutes
     # Create a dataframe for future modeled values, with all wanted modeled variables
     for var in pref['Variables']:
-        modeledVarsForExp[var] = expData[var].iloc[0] * np.ones([expLength, ])
+        modeledVarsForExp[var] = expData[var + '_natural'].iloc[0] * np.ones([expLength, ])
         modeledVarsForExp[var+'_biasVel'] = expData[var].iloc[0] * np.zeros([expLength, ])
     # InitCond['X_0'] = 0.15*np.ones([])
     # InitCond['Vl_0'] = 80
@@ -530,7 +557,7 @@ def simulation_initialization(expData, pref):
     return Settings, Const, modeledVarsForExp
 
 
-def run_var_model_for_all_CV(paramComb, pref, dataMeasurements, variable,scale_params):
+def run_var_model_for_all_CV(paramComb, pref, dataMeasurementsPP, variable, scale_params):
     """
     Desciption:
       A function which runs model for a specific variable for all relevant cross validation
@@ -538,7 +565,7 @@ def run_var_model_for_all_CV(paramComb, pref, dataMeasurements, variable,scale_p
     Inputs:
       1. paramComb- Data frame of measured values for specific experiment.
       2. pref- Preferences dictionary
-      3. dataMeasurements- Dictionary containing data frames of data for selected experiments.
+      3. dataMeasurementsPP- Dictionary containing data frames of data for selected experiments.
       4. variable- Variable to model
     Outputs:
       1. scoreForParamComb- Sum of the score for all CV options
@@ -553,7 +580,7 @@ def run_var_model_for_all_CV(paramComb, pref, dataMeasurements, variable,scale_p
         CVend = 1 # pref['numCVOpt'] moti
         for CVOpt in range(0, CVend):  # 'numCVOpt' is the number of train/test division options
             trainData, testData, CVTrain, CVTest = \
-                devide_data_comb(dataMeasurements, CVTrain, CVTest)
+                devide_data_comb(dataMeasurementsPP, CVTrain, CVTest)
 
             # Take dictionary of dataframe for every experiment, and output a dataframe with all experiments together
             # features = pref['Combinations'][paramComb]['features']
@@ -564,6 +591,6 @@ def run_var_model_for_all_CV(paramComb, pref, dataMeasurements, variable,scale_p
             # scoreForParamComb += run_var_model(variable, pref['Combinations'][paramComb],
             #                                     trainDataCombined, testDataCombined)
             # Optional upgrade for run_var_model:
-            scoreForParamComb += run_var_model_mat(pref,variable, pref['Combinations'][paramComb],
-                                                trainDataCombined, testDataCombined,scale_params)
+            scoreForParamComb += run_var_model_mat(pref, variable, pref['Combinations'][paramComb],
+                                                trainDataCombined, testDataCombined, scale_params)
     return scoreForParamComb

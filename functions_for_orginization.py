@@ -8,7 +8,7 @@ import scipy
 from itertools import combinations
 from tkinter import *
 import os
-
+import easygui as e
 
 def setPreferences():
     """
@@ -46,7 +46,7 @@ def linear_model_GUI():
         firstGUI.destroy()
 
     def passForword2():
-        global varForModel, varForData, fractionMinVal, fractionMaxVal
+        global varForModel, varForData, fractionMinVal, fractionMaxVal, selectedNewFeatures
         indexOptModel = varModelListbox.curselection()
         selectedVarModel = []
         for idx in range(0, len(indexOptModel)):
@@ -58,6 +58,13 @@ def linear_model_GUI():
         for idx in range(0, len(indexOptData)):
             selectedVarData.append(varDataListbox.get(indexOptData[idx]))
         varForData = selectedVarData
+
+        indexNewFeat = newFeatListbox.curselection()
+        selectedNewFeatData = []
+        for idx in range(0, len(indexNewFeat)):
+            selectedNewFeatData.append(newFeatListbox.get(indexNewFeat[idx]))
+        selectedNewFeatures = selectedNewFeatData
+
 
 
         fractionMinVal = float(FracMinValEntry.get())
@@ -132,7 +139,7 @@ def linear_model_GUI():
     isLoadInterpolated = isLoadInterpolated.get()
     isRunParallel = isRunParallel.get()
     # Orginize needed data for next GUI
-    data, dataPP,scale_params  = load_data(processType, preProcessing, isFilterData, isLoadInterpolated = isLoadInterpolated)#load data for variable options
+    data = load_data(processType, isFilterData, isLoadInterpolated=isLoadInterpolated)  # load data for variable options
     expList = list(data.keys())
     varOpt = []
     varInExp = pd.DataFrame(index=expList)
@@ -145,6 +152,7 @@ def linear_model_GUI():
             else:
                 varInExp[var][exp] = 1
 
+
     #set modeled variables needs to be changed for every new process
     if processType == 'Tobramycin':
         modeledVariables = ['Incyte', 'Tobramycin', 'Kanamycin', 'pH_x', 'pH_y', 'DO', 'Dextrose[percent]',
@@ -152,7 +160,9 @@ def linear_model_GUI():
     else:
         modeledVariables = varOpt
     # varOpt = list(data[expList[5]].columns)
-
+    # Import sophisticated features for modeling
+    newFeaturesDict = set_new_features(processType, modeledVariables)
+    newFeatures = list(newFeaturesDict.keys())
 
     secondGUI = Tk()
     secondGUI.geometry('1100x700') #set the size for the GUI window
@@ -183,18 +193,27 @@ def linear_model_GUI():
     # varDataListbox.selection_set(2)
     varDataListbox.selection_set(3)
 
+    newFeatText = Label(secondGUI, text='New features:', font=('Helvetica', '10', 'bold'))
+    newFeatText.grid(row=2, column=1, sticky=E, pady=10, padx=20)
+    newFeatListbox = Listbox(secondGUI, selectmode='multiple', exportselection=False)
+    newFeatListbox.grid(row=2, column=2, pady=10)
+    for item in newFeatures:
+        newFeatListbox.insert(END, item)
+    # varDataListbox.selection_set(1)
+    # varDataListbox.selection_set(2)
+    newFeatListbox.selection_set(3)
 
     fracMinText = Label(secondGUI, text='Minimal fraction for group:', font=('Helvetica', '10', 'bold'))
-    fracMinText.grid(row=2, column=1, sticky=E, pady=10, padx=20)
+    fracMinText.grid(row=3, column=1, sticky=E, pady=10, padx=20)
     FracMinValEntry = Entry(secondGUI)
-    FracMinValEntry.grid(row=2, column=2, pady=10)
+    FracMinValEntry.grid(row=3, column=2, pady=10)
     FracMinValEntry.delete(0, END)
     FracMinValEntry.insert(0, "0.3")
 
     fracMaxText = Label(secondGUI, text='Maximal fraction for group:', font=('Helvetica', '10', 'bold'))
-    fracMaxText.grid(row=2, column=3, sticky=E, pady=10, padx=20)
+    fracMaxText.grid(row=3, column=3, sticky=E, pady=10, padx=20)
     FracMaxValEntry = Entry(secondGUI)
-    FracMaxValEntry.grid(row=2, column=4, pady=10)
+    FracMaxValEntry.grid(row=3, column=4, pady=10)
     FracMaxValEntry.delete(0, END)
     FracMaxValEntry.insert(0, "0.3")
 
@@ -208,11 +227,12 @@ def linear_model_GUI():
     random.shuffle(relExp)# Shuffle experiments order to avoid unwanted dependencies
     modelingRelExp = relExp[0:int(float(relDataModelingSize) * len(relExp))]
     validationRelExp = relExp[int(float(relDataModelingSize) * len(relExp)):]
+    newFeaturesDict = {feat: newFeaturesDict[feat] for feat in selectedNewFeatures}
 
 
-    pref = {'Variables': varForModel,'Data variables': varForData, 'Process Type': processType,
-            'preProcessing type': preProcessing, 'Rel train size': relTrainSize,
-            'Rel modeling size': relDataModelingSize, 'Is filter data': isFilterData,
+    pref = {'Variables': varForModel,'Data variables': varForData, 'New features': selectedNewFeatures,
+            'New features dict': newFeaturesDict, 'Process Type': processType, 'preProcessing type': preProcessing,
+            'Rel train size': relTrainSize, 'Rel modeling size': relDataModelingSize, 'Is filter data': isFilterData,
             'Fraction minimal value': fractionMinVal, 'Fraction maximal value': fractionMaxVal,
             'Relevant experiments': relExp, 'allVariables': varOpt, 'isLoadInterpolated': isLoadInterpolated,
             'Modeling experiments': modelingRelExp, 'Validation experiments': validationRelExp,
@@ -223,8 +243,17 @@ def linear_model_GUI():
     return pref
     # list(data.columns)
 
+def set_new_features(processType, modeledVariables):
+    if processType == 'Tobramycin':
+        newFeatures = {'DO * Incyte': ['DO', 'Incyte'], 'S * Incyte': ['S', 'Incyte'], 'A * Incyte': ['A', 'Incyte'],
+                       'pH * Incyte': ['pH_x', 'Incyte']}
+        for var in modeledVariables:
+            newFeatures[var + '_del'] = [var]
+        # newFeatures = ['DO * X', 'S * X', 'A * X', 'pH * X'] + [var + '_del' for var in modeledVariables]
+    return newFeatures
 
-def load_data(process, preProcessing, isFilterData, relExp='All', isLoadInterpolated=1):
+
+def load_data(process, isFilterData, relExp='All', isLoadInterpolated=1):
     """
     Description:
     A function which loads data from .py files, and then filters, interpolates (if data is
@@ -274,10 +303,11 @@ def load_data(process, preProcessing, isFilterData, relExp='All', isLoadInterpol
         interpData = data_interp_df(data)
 
     # Conduct pre-processing according to wanted type
-    interpDataPP ,scale_params= pre_process_function(interpData, preProcessing)
+    # interpDataPP, scale_params= pre_process_function(interpData, preProcessing)
 
 
-    return interpData, interpDataPP,scale_params
+    return interpData
+
 
 
 def pre_process_function(data, preProcessing):
@@ -322,16 +352,14 @@ def pre_process_function(data, preProcessing):
              varNames.append('TimeMeas')
         dataPP[expName].reset_index(drop=True, inplace=True)
         dataPP[expName].loc[:, 'TimeMeas'] = data[expName].index
-    scale1= pd.DataFrame()
+
+    scale1 = pd.DataFrame()
     for var in varNames[:-1]:
-        try:
-            if preProcessing == 'scaling (0-1)':
-                scale1[var] = [dataCombined[var].min(),dataCombined[var].max()]
-            else:
-                scale1[var] = [dataCombined[var].median(), scipy.stats.iqr(dataCombined[var])]
-        except:
-            dd=1
-    return dataPP,scale1
+        if preProcessing == 'scaling (0-1)':
+            scale1[var] = [dataCombined[var].min(), dataCombined[var].max()]
+        else:
+            scale1[var] = [dataCombined[var].median(), scipy.stats.iqr(dataCombined[var])]
+    return dataPP, scale1
 
 def data_interp_df(allData):
     """
@@ -385,24 +413,38 @@ def data_interp_df(allData):
 
     return interpDataOrginized
 
+def append_natural_var(interpDataFull, interpDataPP, pref):
+    for exp in interpDataFull.keys():
+        for var in pref['Variables']:
+            interpDataPP[exp][var + '_natural'] = interpDataFull[exp][var]
+            interpDataPP[exp][var + '_del' + '_natural'] = interpDataFull[exp][var + '_del']
+    return interpDataPP
+
+def define_model_valid(interpDataPP, pref):
+    interpDataPPModeling = {exp: interpDataPP[exp] for exp in pref['Modeling experiments']}
+    interpDataPPValid = {exp: interpDataPP[exp] for exp in pref['Validation experiments']}
+    return interpDataPPModeling, interpDataPPValid
+
+
 def meas_creator(interpDataPP, pref):
     """
     Description:
     A function which takes interpolated data and creates a set of measurements for each
     experiment, with interval of 1 hour.
     Inputs:
-      1. interpDataPP- a dictionary containing dataframes for relevant experiments. Each data frame represents one
-                      experiment after linear interpulation where rows are time and columns are measured variables.
-      2. pref- preferences dictionary
+      1. interpDataPP- A dictionary containing data frames for relevant experiments. Each data frame represents one
+                      experiment after linear interpolation and pre-processing where rows are time and columns
+                       are measured variables.
+      2. pref- Preferences dictionary
     Outputs:
-      1. dataMeasurements- same structure as interpDataPP, where each experiment holds mean data-frame for every hour.
-                           This will be used to train the linear model of each modeled variable. number of rows for
-                           every data frame is the length in hours of the relevant experiment.
+      1. dataMeasurementsPP- Same structure as interpDataPP, where each experiment holds mean data-frame for every
+                           hour. This will be used to train the linear model of each modeled variable.
+                            number of rows for every data frame is the length in hours of the relevant experiment.
     """
-    dataMeasurements = {}
+    dataMeasurementsPP = {}
     for exp in interpDataPP.keys():
         # Run over each hour of the experiment. inside each hour, compute the average of +- 30 min for each measurement
-        dataMeasurements[exp] = \
+        dataMeasurementsPP[exp] = \
             pd.concat([pd.DataFrame([interpDataPP[exp].iloc[hour-30:hour+30].mean()],
                                     columns=interpDataPP[exp].columns)
                        for hour in range(30, len(interpDataPP[exp]) - 30, 60)],
@@ -410,18 +452,46 @@ def meas_creator(interpDataPP, pref):
 
         # Create "dataDelta"- data frame containing the dx/dt, with units [x/hour],
         # where x are modeled variables
-        dataDelta = pd.concat(
-            [pd.DataFrame([interpDataPP[exp].iloc[hour+30] - interpDataPP[exp].iloc[hour-30]],
-                          columns=interpDataPP[exp].columns)
-                       for hour in range(30, len(interpDataPP[exp]) - 30, 60)], ignore_index=True)
-        dataDelta = dataDelta[pref['Variables']]
-        columnNames = []
-        for columns in pref['Variables']:
-            columnNames.append(columns + '_del')
-        dataDelta.column = columnNames
-        dataMeasurements[exp][dataDelta.column] = dataDelta
+        # dataDelta = pd.concat(
+        #     [pd.DataFrame([interpDataPP[exp].iloc[hour+30] - interpDataPP[exp].iloc[hour-30]],
+        #                   columns=interpDataPP[exp].columns)
+        #                for hour in range(30, len(interpDataPP[exp]) - 30, 60)], ignore_index=True)
+        # dataDelta = dataDelta[pref['Variables']]
+        # columnNames = []
+        # for columns in pref['Variables']:
+        #     columnNames.append(columns + '_del12')
+        # dataDelta.column = columnNames
+        # dataMeasurements[exp][dataDelta.column] = dataDelta
+    return dataMeasurementsPP
 
-    return dataMeasurements
+def add_new_features(interpData, pref):
+
+    for exp in interpData.keys():
+        dataDelta = interpData[exp][pref['Variables']].diff() * 60 #  delta for wanted variables to model in hours
+        dataDelta.iloc[0] = dataDelta.iloc[1]
+        dataDelta.columns = [name + '_del' for name in list(interpData[exp][pref['Variables']].columns)]
+        interpData[exp][dataDelta.columns] = dataDelta
+        columnNames = interpData[exp].columns
+        for newFeat in pref['New features']:
+            if newFeat not in columnNames:
+                interpData[exp][newFeat] = extract_feat(newFeat, interpData[exp], pref)
+    return interpData
+
+def extract_feat(newFeat, dataMeasurements, pref):
+    # newFeatures = ['DO * Incyte', 'S * Incyte', 'A * Incyte', 'pH * Incyte']
+    if not all(elem in pref['Variables'] for elem in pref['New features dict'][newFeat]):
+        e.msgbox("Please make sure that new features are generated from selected variables! ", "Error!")
+    else:
+        if newFeat == 'DO * Incyte':
+            return dataMeasurements['DO'] * dataMeasurements['Incyte']
+        elif newFeat == 'S * Incyte':
+            return dataMeasurements['Dextrose[percent]'] * dataMeasurements['Incyte']
+        elif newFeat == 'A * Incyte':
+            return dataMeasurements['Ammonia[percent]'] * dataMeasurements['Incyte']
+        elif newFeat == 'pH * Incyte':
+            return dataMeasurements['pH_x'] * dataMeasurements['Incyte']
+
+
 
 
 def create_combinations(pref):
@@ -435,7 +505,7 @@ def create_combinations(pref):
       1. Combinations- A dictionary, containing all Hyper parameters combinations to be executed for this modeled
       variable. Hyper parameters could be- variables of the linear eqations, distance input, fraction etc.
     """
-    allFeatForModel = pref['Variables'] + pref['Data variables']
+    allFeatForModel = pref['Variables'] + pref['Data variables'] + pref['New features']
     featuresOptions = sum([list(map(list, combinations(allFeatForModel, i)))
                            for i in range(len(allFeatForModel) + 1)], [])
     featuresOptions = featuresOptions[1:]
