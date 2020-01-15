@@ -245,8 +245,8 @@ def linear_model_GUI():
 
 def set_new_features(processType, modeledVariables):
     if processType == 'Tobramycin':
-        newFeatures = {'DO * Incyte': ['DO', 'Incyte'], 'S * Incyte': ['S', 'Incyte'], 'A * Incyte': ['A', 'Incyte'],
-                       'pH * Incyte': ['pH_x', 'Incyte']}
+        newFeatures = {'DO * Incyte': ['DO', 'Incyte'], 'S * Incyte': ['Dextrose[percent]', 'Incyte'],
+                       'A * Incyte': ['Ammonia[percent]', 'Incyte'], 'pH * Incyte': ['pH_x', 'Incyte']}
         for var in modeledVariables:
             newFeatures[var + '_del'] = [var]
         # newFeatures = ['DO * X', 'S * X', 'A * X', 'pH * X'] + [var + '_del' for var in modeledVariables]

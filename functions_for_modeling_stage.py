@@ -573,8 +573,15 @@ def run_var_model_for_all_CV(paramComb, pref, dataMeasurementsPP, variable, scal
     CVTrain = pref['CVTrain']
     CVTest = pref['CVTest']
     scoreForParamComb = 0
+    newFeaturesVars = []
+
+    # Avoid running configuration containing the wanted variable to be modeled, or two short.
+    for feat in pref['New features dict'].keys():
+        if feat in pref['Combinations'][paramComb]['features']:
+            newFeaturesVars.extend(pref['New features dict'][feat])
+    # newFeaturesVars = [pref['New features dict'][feat] for feat in pref['New features dict'].keys()]
     if (variable in pref['Combinations'][paramComb]['features']) or\
-            len(pref['Combinations'][paramComb]['features']) < 2:  # moti
+            (len(pref['Combinations'][paramComb]['features']) < 2) or variable in newFeaturesVars:  # moti and Eran
         scoreForParamComb = 1e8
     else:
         CVend = 1 # pref['numCVOpt'] moti
