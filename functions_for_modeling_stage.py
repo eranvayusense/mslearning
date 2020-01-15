@@ -303,17 +303,18 @@ def polyfit_nd_coeff(pref, trainModelVar, trainResults, testModelVar,scale_param
     bb=np.repeat([[sw]], c2.shape[1], axis=1)
     a2 = c2*bb[0, :, :].T
     # with contrains moti
-    if pref['preProcessing type'] == 'Standardize (Robust scalar)':
-        lb=(((0.03-scale_params[0])/scale_params[1])-varT)/1 # or /60 ??? moti
-    elif pref['preProcessing type']=='scaling (0-1)':
-        lb=-varT+(0.03-scale_params[0])/(scale_params[1]-scale_params[0]) # or /60 ??? moti
+    #if pref['preProcessing type'] == 'Standardize (Robust scalar)':
+    lb=(0.03-varT)/1 # or /60 ??? moti
+    #elif pref['preProcessing type']=='scaling (0-1)':
+    #    lb=-varT+(0.03-scale_params[0])/(scale_params[1]-scale_params[0]) # or /60 ??? moti
     coeff2 = np.linalg.lstsq(a2, trainResults*sw, rcond=None)[0]
     if coeff2.dot(c_test2[0, :])<lb:
+        hess1 = lambda x, v: np.zeros((len(c_test2[0, :]), len(c_test2[0, :])))
         y1=trainResults*sw
         additional1={'aa2':a2,'yy1':y1}
         linear_constraint = LinearConstraint([c_test2[0, :]], [lb], [np.inf])
         res = minimize(fun=f1,x0= np.ones([len(c_test2[0, :]),]), args=additional1, method='trust-constr',
-                    constraints=linear_constraint)
+                    hess=hess1,constraints=linear_constraint)
         coeff2=res.x
     return coeff2, c_test2[0, :]
 
