@@ -28,7 +28,7 @@ def setPreferences():
         pref['fracOptions'] = np.arange(pref['Fraction minimal value'], pref['Fraction maximal value'] + 0.1, 0.1)
 
     # Add aditional preferences
-    pref['featuresDist'] = ['Time']
+    # pref['featuresDist'] = ['Time']
     pref['Combinations'] = create_combinations(pref)
     pref['variables'] = ['Product']
     return pref
@@ -46,7 +46,7 @@ def linear_model_GUI():
         firstGUI.destroy()
 
     def passForword2():
-        global varForModel, varForData, fractionMinVal, fractionMaxVal, selectedNewFeatures
+        global varForModel, varForData, varForDist, fractionMinVal, fractionMaxVal, selectedNewFeatures
         indexOptModel = varModelListbox.curselection()
         selectedVarModel = []
         for idx in range(0, len(indexOptModel)):
@@ -65,7 +65,11 @@ def linear_model_GUI():
             selectedNewFeatData.append(newFeatListbox.get(indexNewFeat[idx]))
         selectedNewFeatures = selectedNewFeatData
 
-
+        indexOptDist = varDistListbox.curselection()
+        selectedVarDist = []
+        for idx in range(0, len(indexOptDist)):
+            selectedVarDist.append(varDistListbox.get(indexOptDist[idx]))
+        varForDist = selectedVarDist
 
         fractionMinVal = float(FracMinValEntry.get())
         fractionMaxVal = float(FracMaxValEntry.get())
@@ -181,6 +185,7 @@ def linear_model_GUI():
     varModelListbox.selection_set(1)
     # varModelListbox.selection_set(2)
     varModelListbox.selection_set(3)
+    varModelListbox.selection_set(7)
 
     varDataText = Label(secondGUI, text='Variables for data:', font=('Helvetica', '10', 'bold'))
     varDataText.grid(row=1, column=3, sticky=E, pady=10, padx=20)
@@ -201,7 +206,19 @@ def linear_model_GUI():
         newFeatListbox.insert(END, item)
     # varDataListbox.selection_set(1)
     # varDataListbox.selection_set(2)
-    newFeatListbox.selection_set(3)
+    newFeatListbox.selection_set(0)
+
+    varDistText = Label(secondGUI, text='Variables for distance:', font=('Helvetica', '10', 'bold'))
+    varDistText.grid(row=2, column=3, sticky=E, pady=10, padx=20)
+    varDistListbox = Listbox(secondGUI, selectmode='multiple', exportselection=False)
+    varDistListbox.grid(row=2, column=4, pady=10)
+    for item in varOpt:
+        if item not in modeledVariables:
+            varDistListbox.insert(END, item)
+    # varDataListbox.selection_set(1)
+    # varDataListbox.selection_set(2)
+    varDistListbox.selection_set(8)
+
 
     fracMinText = Label(secondGUI, text='Minimal fraction for group:', font=('Helvetica', '10', 'bold'))
     fracMinText.grid(row=3, column=1, sticky=E, pady=10, padx=20)
@@ -236,7 +253,7 @@ def linear_model_GUI():
             'Fraction minimal value': fractionMinVal, 'Fraction maximal value': fractionMaxVal,
             'Relevant experiments': relExp, 'allVariables': varOpt, 'isLoadInterpolated': isLoadInterpolated,
             'Modeling experiments': modelingRelExp, 'Validation experiments': validationRelExp,
-            'Is run parallel': isRunParallel}
+            'Is run parallel': isRunParallel, 'featuresDist': varForDist}
     pref['numCVOpt'] = len(modelingRelExp) #number of options for different CV
     pref['CVTrain'] = modelingRelExp[0:int(float(relTrainSize) * len(modelingRelExp))]# Chosen experiments for train, in first CV division
     pref['CVTest'] = modelingRelExp[int(float(relTrainSize) * len(modelingRelExp)):]# Chosen experiments for test, in first CV division
@@ -285,7 +302,7 @@ def load_data(process, isFilterData, relExp='All', isLoadInterpolated=1):
             data = filter_data(data, processType=process)  # Activate smoothing function on data
 
     elif process == "BiondVax":
-        fileName = 'RnD_data_new.p'
+        fileName = 'BiondVaxDataEran.p'
         with open(os.path.join(folderName, fileName), 'rb') as f:
             data = pickle.load(f)
         if isFilterData:
@@ -389,25 +406,25 @@ def data_interp_df(allData):
         #         nextRow = interpData[exp].loc[interpData[exp].index[min_idx]]
         #         nextRow.rename(index={nextRow.index[0]: time}, inplace=True)
         #         interpDataOrginized[exp] = interpDataOrginized[exp].append(nextRow)
-        for time in range(0, int(interpData[exp].index[-1])+1):
-            if time == 0:
-                nextRow = pd.DataFrame(interpData[exp].loc[interpData[exp].index[time]]).T
-                nextRow.rename(index={nextRow.index[0]: time}, inplace=True)
-                interpDataOrginized[exp] = nextRow
-
-            elif time in interpData[exp].index:
-                nextRow = pd.DataFrame(interpData[exp].loc[time]).T
-                nextRow.rename(index={nextRow.index[0]: time}, inplace=True)
-                interpDataOrginized[exp] = interpDataOrginized[exp].append(nextRow)
-            else:
-                nextRowNP = np.empty((interpData[exp].shape[1], 1))
-                nextRowNP[:] = np.nan
-                nextRow = pd.DataFrame(nextRowNP).T
-                nextRow.columns = list(interpData[exp].columns)
-                nextRow.rename(index={nextRow.index[0]: time}, inplace=True)
-                interpDataOrginized[exp] = interpDataOrginized[exp].append(nextRow)
         try:
-            interpDataOrginized[exp] =interpDataOrginized[exp].interpolate()
+            for time in range(0, int(interpData[exp].index[-1])+1):
+                if time == 0:
+                    nextRow = pd.DataFrame(interpData[exp].loc[interpData[exp].index[time]]).T
+                    nextRow.rename(index={nextRow.index[0]: time}, inplace=True)
+                    interpDataOrginized[exp] = nextRow
+
+                elif time in interpData[exp].index:
+                    nextRow = pd.DataFrame(interpData[exp].loc[time]).T
+                    nextRow.rename(index={nextRow.index[0]: time}, inplace=True)
+                    interpDataOrginized[exp] = interpDataOrginized[exp].append(nextRow)
+                else:
+                    nextRowNP = np.empty((interpData[exp].shape[1], 1))
+                    nextRowNP[:] = np.nan
+                    nextRow = pd.DataFrame(nextRowNP).T
+                    nextRow.columns = list(interpData[exp].columns)
+                    nextRow.rename(index={nextRow.index[0]: time}, inplace=True)
+                    interpDataOrginized[exp] = interpDataOrginized[exp].append(nextRow)
+            interpDataOrginized[exp] = interpDataOrginized[exp].interpolate()
         except:
             q=2
 
@@ -509,12 +526,16 @@ def create_combinations(pref):
     featuresOptions = sum([list(map(list, combinations(allFeatForModel, i)))
                            for i in range(len(allFeatForModel) + 1)], [])
     featuresOptions = featuresOptions[1:]
+    distOptions = sum([list(map(list, combinations(pref['featuresDist'], i)))
+                           for i in range(len(pref['featuresDist']) + 1)], [])
+    distOptions = distOptions[1:]
     Combinations = {}
     counter = 0
-    for featOpt in featuresOptions:
-        for fracOpt in pref['fracOptions']:
-            Combinations[counter] = {'features': featOpt, 'frac': fracOpt, 'featuresDist': pref['featuresDist']}
-            counter += 1
+    for distComb in distOptions:
+        for featOpt in featuresOptions:
+            for fracOpt in pref['fracOptions']:
+                Combinations[counter] = {'features': featOpt, 'frac': fracOpt, 'featuresDist': distComb}
+                counter += 1
     return Combinations
 
 

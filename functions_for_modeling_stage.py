@@ -76,10 +76,10 @@ def run_var_model_mat(pref,variable, paramComb, trainData, testData,scale_params
     #tParallel=time.time()
     test_dist={}; train_dist={}; distSumSqr = 0
     for varForDist in paramComb['featuresDist']:
-        test_dist[varForDist] = np.repeat(testData[paramComb['featuresDist']].to_numpy().T,
-                                          trainDistVar.size, axis=0)
-        train_dist[varForDist] = np.repeat(trainDistVar,
-                                           len(testData[paramComb['featuresDist']].to_numpy()),
+        test_dist[varForDist] = np.repeat(np.array([testData[varForDist]]),
+                                          len(allModelingData[varForDist]), axis=0)
+        train_dist[varForDist] = np.repeat(np.array([allModelingData[varForDist]]).T,
+                                           len(testData[varForDist]),
                                            axis=1)
         try:
             distVarSqr = (test_dist[varForDist] - train_dist[varForDist]) ** 2
@@ -88,14 +88,15 @@ def run_var_model_mat(pref,variable, paramComb, trainData, testData,scale_params
         distSumSqr += distVarSqr
     npoints = int(np.ceil(paramComb['frac'] * relTrainData[:, 0].size))
     dist = np.sqrt(distSumSqr)
-    w = np.argsort(dist,axis=0)[:npoints]
+    w = np.argsort(dist, axis=0)[:npoints]
     errorVal = 0  # Initialize error value
    # print('mat1 run: ' + str(time.time() - tParallel))
     tParallel=time.time()
-    zout1, wout,bias_re,bias_vel = loess_nd_test_point_mat(pref,allRelTestData, paramComb['features'],
-                                                           relTrainData, trainDistVar, trainResults, dist, w,
-                                                           scale_params[variable], variable,allRelTestData[variable],
-                                                           frac=paramComb['frac'])
+    zout1, wout, bias_re, bias_vel =\
+        loess_nd_test_point_mat(pref, allRelTestData, paramComb['features'],
+                                relTrainData, trainDistVar, trainResults, dist, w,
+                                scale_params[variable], variable, allRelTestData[variable],
+                                frac=paramComb['frac'])
     for index, row in allRelTestData.iterrows():
         #relTestData = row[paramComb['features']].to_numpy()
         #testDistVar = row[paramComb['featuresDist']].to_numpy()
@@ -414,13 +415,15 @@ def run_and_test_full_model(pref, results, modelingDataCombined, validationData,
 
                 allRelTestData = allRelTestDataInit.T.drop_duplicates().T  # Remove duplications from "allRelTrainDataInit" dataframe
 
-                testDistVar = currModelState[bestParams['featuresDist']].to_numpy()
+                # testDistVar = currModelState[bestParams['featuresDist']].to_numpy()
                 test_dist={}; train_dist={}; distSumSqr = 0
                 for varForDist in bestParams['featuresDist']:
-                    test_dist[varForDist] = np.repeat(testDistVar.T,
-                                                      dataDict[var]['trainDistVar'].size, axis=0)
-                    train_dist[varForDist] = np.repeat(dataDict[var]['trainDistVar'],
-                                                       len(testDistVar),
+                    test_dist[varForDist] = np.repeat(currModelState[varForDist].to_numpy().T,
+                                                      allModelingData[varForDist].to_numpy().size,
+                                                      axis=0)
+                                                      # dataDict[var]['trainDistVar'].size, axis=0)
+                    train_dist[varForDist] = np.repeat(allModelingData[varForDist].to_numpy(),
+                                                       len(currModelState[varForDist].to_numpy()),
                                                        axis=1)
 
                     distVarSqr = (test_dist[varForDist] - train_dist[varForDist]) ** 2
