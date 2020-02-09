@@ -2,21 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e0c9abd6-095f-4c67-9228-7a39cd1f21da" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RnD_Data.p" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/RnD_data_interpolated.p" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/RnD_data_interpolated_new.p" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/RnD_data_new.p" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data orginization/model_or_input.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data_interp_test.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/functions_for_data.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/functions_for_linear_model.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/functions_for_modeling_stage.py" beforeDir="false" afterPath="$PROJECT_DIR$/functions_for_modeling_stage.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/functions_for_orginization.py" beforeDir="false" afterPath="$PROJECT_DIR$/functions_for_orginization.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main_linear_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_linear_model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/read_data.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/venv/Lib/site-packages/loess/loess_2d.py" beforeDir="false" afterPath="$PROJECT_DIR$/venv/Lib/site-packages/loess/loess_2d.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -24,58 +10,12 @@
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="DockManager">
-    <window id="1">
-      <content type="file-editors">
-        <state>
-          <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-            <file pinned="false" current-in-tab="true">
-              <entry file="file://$PROJECT_DIR$/functions_for_orginization.py">
-                <provider selected="true" editor-type-id="text-editor">
-                  <state relative-caret-position="225">
-                    <caret line="361" selection-start-line="361" selection-end-line="361" />
-                    <folding>
-                      <element signature="e#0#36#0" expanded="true" />
-                    </folding>
-                  </state>
-                </provider>
-              </entry>
-            </file>
-            <file pinned="false" current-in-tab="false">
-              <entry file="file://$PROJECT_DIR$/function_for_smoothing.py">
-                <provider selected="true" editor-type-id="text-editor">
-                  <state relative-caret-position="-837">
-                    <caret line="5" column="4" selection-start-line="5" selection-start-column="4" selection-end-line="5" selection-end-column="4" />
-                    <folding>
-                      <element signature="e#0#19#0" expanded="true" />
-                    </folding>
-                  </state>
-                </provider>
-              </entry>
-            </file>
-            <file pinned="false" current-in-tab="false">
-              <entry file="file://$PROJECT_DIR$/functions_for_score_and_display.py">
-                <provider selected="true" editor-type-id="text-editor">
-                  <state relative-caret-position="245">
-                    <caret line="53" column="32" selection-start-line="53" selection-start-column="32" selection-end-line="53" selection-end-column="32" />
-                    <folding>
-                      <element signature="e#0#19#0" expanded="true" />
-                    </folding>
-                  </state>
-                </provider>
-              </entry>
-            </file>
-          </leaf>
-        </state>
-      </content>
-    </window>
-  </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main_linear_model.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="257">
+            <state relative-caret-position="1890">
               <caret line="70" column="28" selection-start-line="70" selection-start-column="20" selection-end-line="70" selection-end-column="28" />
               <folding>
                 <element signature="e#45#85#0" expanded="true" />
@@ -87,7 +27,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$USER_HOME$/Anaconda3/Lib/codecs.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="288">
+            <state relative-caret-position="8370">
               <caret line="311" selection-start-line="311" selection-end-line="311" />
             </state>
           </provider>
@@ -105,7 +45,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$USER_HOME$/VAYU Sense AG/VAYU ltd - Documents/R&amp;D/algo 7.2/BiondVax/biondvax model analysis/model_analysis_biondvax.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-2754">
+            <state relative-caret-position="594">
               <caret line="30" selection-start-line="30" selection-end-line="30" />
               <folding>
                 <element signature="e#0#51#0" expanded="true" />
@@ -194,6 +134,11 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="Test" />
+      </map>
+    </option>
   </component>
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
@@ -481,11 +426,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.main_linear_model" />
-        <item itemvalue="Python.111" />
-        <item itemvalue="Python.data_interp_test" />
-        <item itemvalue="Python.functions_for_orginization" />
         <item itemvalue="Python.organize_data" />
+        <item itemvalue="Python.main_linear_model" />
+        <item itemvalue="Python.functions_for_orginization" />
+        <item itemvalue="Python.data_interp_test" />
+        <item itemvalue="Python.111" />
       </list>
     </recent_temporary>
   </component>
@@ -500,6 +445,14 @@
       <option name="presentableId" value="Default" />
       <updated>1569341577674</updated>
     </task>
+    <task id="LOCAL-00001" summary="linear model project upload">
+      <created>1581263714105</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1581263714105</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TodoView">
@@ -521,11 +474,11 @@
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.24707602" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.32748538" />
-      <window_info active="true" anchor="bottom" id="Debug" order="3" sideWeight="0.49947312" visible="true" weight="0.35666665" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49947312" weight="0.35666665" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.3288889" />
-      <window_info anchor="bottom" id="Version Control" order="7" weight="0.3288889" />
+      <window_info active="true" anchor="bottom" id="Version Control" order="7" visible="true" weight="0.3288889" />
       <window_info anchor="bottom" id="Terminal" order="8" />
       <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.50052685" side_tool="true" weight="0.35444444" />
       <window_info anchor="bottom" id="Python Console" order="10" weight="0.32666665" />
@@ -533,6 +486,10 @@
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
     </layout>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="linear model project upload" />
+    <option name="LAST_COMMIT_MESSAGE" value="linear model project upload" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -908,43 +865,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/statistical_analysis.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="22977">
-          <caret line="872" column="36" selection-start-line="872" selection-start-column="31" selection-end-line="872" selection-end-column="36" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-            <marker date="1576686844748" expanded="true" signature="46825:46942" ph="..." />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/set_initial_constants_and_settings.py">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/RunSimulation_model.py">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/functions_for_score_and_display.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="245">
-          <caret line="53" column="32" selection-start-line="53" selection-start-column="32" selection-end-line="53" selection-end-column="32" />
-          <folding>
-            <element signature="e#0#19#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/function_for_smoothing.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-837">
-          <caret line="5" column="4" selection-start-line="5" selection-start-column="4" selection-end-line="5" selection-end-column="4" />
-          <folding>
-            <element signature="e#0#19#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_imps/_pydev_execfile.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="389">
@@ -952,27 +872,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Anaconda3/Lib/codecs.py">
+    <entry file="file://$USER_HOME$/Anaconda3/Lib/multiprocessing/pool.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="288">
-          <caret line="311" selection-start-line="311" selection-end-line="311" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/VAYU Sense AG/VAYU ltd - Documents/R&amp;D/algo 7.2/BiondVax/biondvax model analysis/functions_for_biondvax_model_analysis.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="81">
-          <caret line="3" selection-start-line="3" selection-end-line="3" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/VAYU Sense AG/VAYU ltd - Documents/R&amp;D/algo 7.2/BiondVax/biondvax model analysis/model_analysis_biondvax.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-2754">
-          <caret line="30" selection-start-line="30" selection-end-line="30" />
-          <folding>
-            <element signature="e#0#51#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="176">
+          <caret line="275" selection-start-line="275" selection-end-line="275" />
         </state>
       </provider>
     </entry>
@@ -986,22 +889,76 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Anaconda3/Lib/multiprocessing/pool.py">
+    <entry file="file://$PROJECT_DIR$/function_for_smoothing.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="176">
-          <caret line="275" selection-start-line="275" selection-end-line="275" />
+        <state relative-caret-position="81">
+          <caret line="5" column="4" selection-start-line="5" selection-start-column="4" selection-end-line="5" selection-end-column="4" />
+          <folding>
+            <element signature="e#0#19#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/functions_for_score_and_display.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1350">
+          <caret line="53" column="32" selection-start-line="53" selection-start-column="32" selection-end-line="53" selection-end-column="32" />
+          <folding>
+            <element signature="e#0#19#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/main_linear_model.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="257">
+        <state relative-caret-position="1890">
           <caret line="70" column="28" selection-start-line="70" selection-start-column="20" selection-end-line="70" selection-end-column="28" />
           <folding>
             <element signature="e#45#85#0" expanded="true" />
           </folding>
         </state>
       </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Anaconda3/Lib/codecs.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="8370">
+          <caret line="311" selection-start-line="311" selection-end-line="311" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/VAYU Sense AG/VAYU ltd - Documents/R&amp;D/algo 7.2/BiondVax/biondvax model analysis/functions_for_biondvax_model_analysis.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="81">
+          <caret line="3" selection-start-line="3" selection-end-line="3" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/VAYU Sense AG/VAYU ltd - Documents/R&amp;D/algo 7.2/BiondVax/biondvax model analysis/model_analysis_biondvax.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="594">
+          <caret line="30" selection-start-line="30" selection-end-line="30" />
+          <folding>
+            <element signature="e#0#51#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/RunSimulation_model.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/statistical_analysis.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="22977">
+          <caret line="872" column="36" selection-start-line="872" selection-start-column="31" selection-end-line="872" selection-end-column="36" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+            <marker date="1576686844748" expanded="true" signature="46825:46942" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/set_initial_constants_and_settings.py">
+      <provider selected="true" editor-type-id="text-editor" />
     </entry>
     <entry file="file://$PROJECT_DIR$/functions_for_modeling_stage.py">
       <provider selected="true" editor-type-id="text-editor">
