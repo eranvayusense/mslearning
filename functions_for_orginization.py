@@ -9,7 +9,13 @@ from itertools import combinations
 from tkinter import *
 import os
 import easygui as e
-
+from pathlib import Path
+path = Path(__file__).parent.absolute()
+import sys
+sys.path.append("C:\\Users\\admin\\VAYU Sense AG\\VAYU ltd - Documents\\R&D\\algo 7.2\\"
+                "BiondVax\\biondvax model analysis")
+from model_analysis_biondvax import *
+sys.path.append(path)
 def setPreferences():
     """
     Description:
@@ -161,6 +167,8 @@ def linear_model_GUI():
     if processType == 'Tobramycin':
         modeledVariables = ['Incyte', 'Tobramycin', 'Kanamycin', 'pH_x', 'pH_y', 'DO', 'Dextrose[percent]',
                        'Ammonia[percent]', 'CO2']
+    elif processType == 'BiondVax':
+        modeledVariables = ['OD', 'DO', 'pH']
     else:
         modeledVariables = varOpt
     # varOpt = list(data[expList[5]].columns)
@@ -239,8 +247,9 @@ def linear_model_GUI():
 
     secondGUI.mainloop()
 
-    relVarInExp = varInExp[varForModel]#create 0/1 dataframe only for selected variables
-    relExp = list(relVarInExp[relVarInExp.sum(axis=1) == len(varForModel)].index)
+    relVarList = list(set(varForModel + varForData + varForDist))
+    relVarInExp = varInExp[relVarList]#create 0/1 dataframe only for selected variables
+    relExp = list(relVarInExp[relVarInExp.sum(axis=1) == len(relVarList)].index)
     random.shuffle(relExp)# Shuffle experiments order to avoid unwanted dependencies
     modelingRelExp = relExp[0:int(float(relDataModelingSize) * len(relExp))]
     validationRelExp = relExp[int(float(relDataModelingSize) * len(relExp)):]
@@ -266,6 +275,8 @@ def set_new_features(processType, modeledVariables):
                        'A * Incyte': ['Ammonia[percent]', 'Incyte'], 'pH * Incyte': ['pH_x', 'Incyte']}
         for var in modeledVariables:
             newFeatures[var + '_del'] = [var]
+    if processType == 'BiondVax':
+        newFeatures = {'DO * OD': ['DO', 'OD'], 'pH * OD': ['pH', 'OD']}
         # newFeatures = ['DO * X', 'S * X', 'A * X', 'pH * X'] + [var + '_del' for var in modeledVariables]
     return newFeatures
 
@@ -302,22 +313,24 @@ def load_data(process, isFilterData, relExp='All', isLoadInterpolated=1):
             data = filter_data(data, processType=process)  # Activate smoothing function on data
 
     elif process == "BiondVax":
-        fileName = 'BiondVaxDataEran.p'
-        with open(os.path.join(folderName, fileName), 'rb') as f:
-            data = pickle.load(f)
-        if isFilterData:
-            data = filter_data(data, processType=process)  # Activate smoothing function on data
+        unRelExp = ['276', 'Failed_270_BV_SS20L_161005', 'Failed_TF_SU30L_190717', '271__BV_SS20L_160525',
+                    'CY_SS5L_160203A', 'CY_SS5L_160203B', 'CY_SS5L_160203C', 'CY_SS5L_160203D']
+        data = load_and_orginize_biondvax_data(isLoadInterpolated)
+        for exp in unRelExp:
+            if exp in data.keys():
+                del data[exp]
+        # fileName = 'BiondVaxDataEran.p'
+        # with open(os.path.join(folderName, fileName), 'rb') as f:
+        #     data = pickle.load(f)
+        # if isFilterData:
+        #     data = filter_data(data, processType=process)  # Activate smoothing function on data
 
     # screen out unrelevant experiments
     if relExp=='All':
         relExp = data.keys()
     data = {wantedExp: data[wantedExp] for wantedExp in relExp}
 
-    # If data is not interpolated, conduct interpolation
-    if isLoadInterpolated:
-        interpData = data
-    else:
-        interpData = data_interp_df(data)
+    interpData = data
 
     # Conduct pre-processing according to wanted type
     # interpDataPP, scale_params= pre_process_function(interpData, preProcessing)
@@ -499,6 +512,7 @@ def extract_feat(newFeat, dataMeasurements, pref):
     if not all(elem in pref['Variables'] for elem in pref['New features dict'][newFeat]):
         e.msgbox("Please make sure that new features are generated from selected variables! ", "Error!")
     else:
+        # features for Tobramycin
         if newFeat == 'DO * Incyte':
             return dataMeasurements['DO'] * dataMeasurements['Incyte']
         elif newFeat == 'S * Incyte':
@@ -508,7 +522,11 @@ def extract_feat(newFeat, dataMeasurements, pref):
         elif newFeat == 'pH * Incyte':
             return dataMeasurements['pH_x'] * dataMeasurements['Incyte']
 
-
+        #features for biondVax
+        elif newFeat == 'DO * OD':
+            return dataMeasurements['DO'] * dataMeasurements['OD']
+        elif newFeat == 'pH * OD':
+            return dataMeasurements['pH'] * dataMeasurements['OD']
 
 
 def create_combinations(pref):

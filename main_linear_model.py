@@ -5,6 +5,7 @@ from functions_for_score_and_display import *
 # Create preferences for run
 import multiprocessing as mp
 import time
+
 if __name__ == '__main__':
     # Create preferences for run
     pref = setPreferences()

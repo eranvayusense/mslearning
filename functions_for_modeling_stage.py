@@ -109,7 +109,7 @@ def run_var_model_mat(pref,variable, paramComb, trainData, testData,scale_params
             # np.mean(np.abs((z_smoot_test[:, idxFeat, idxFilt] - titterTestNP) / (titterTestNP + z_smoot_test[:, idxFeat, idxFilt])))
 
 def loess_nd_test_point_mat(pref,allRelTestData,paramComb_fetchers,trainModelVar, trainDistVar, trainResults,
-                       dist_all,w_all,scale_params,var,varT,frac=0.5, degree=1, sigz=None, npoints=None):
+                       dist_all, w_all, scale_params, var, varT,frac=0.5, degree=1, sigz=None, npoints=None):
     """
 # Inputs:
 #   1. trainModelVar- Data frame for all linear modeling variables values in training stock. each row represents
@@ -377,6 +377,7 @@ def run_and_test_full_model(pref, results, modelingDataCombined, validationData,
         dataDict[var]['relTrainData'] = allModelingData[bestParams['features']].to_numpy()  # relevant features for linear equation.
         dataDict[var]['trainDistVar'] = allModelingData[bestParams['featuresDist']].to_numpy()  # relevant distance values for LLR algorithm.
         dataDict[var]['trainResults'] = allModelingData[delVariableName].to_numpy()  # train delta values of modeled variable
+        dataDict[var]['allModelingData'] = allModelingData
 
     Settings, Const, modeledVars = simulation_initialization(validationData, pref)
 
@@ -411,20 +412,21 @@ def run_and_test_full_model(pref, results, modelingDataCombined, validationData,
                 bestParams = results[var]['bestParams']
                 relTestData = currModelState[bestParams['features']]#.to_numpy()
                 allRelTestDataInit = pd.concat([currModelState[bestParams['features']],
-                                                currModelState[bestParams['featuresDist']]], axis=1, sort=True).dropna()
+                                                currModelState[bestParams['featuresDist']]], sort=True).dropna()
 
                 allRelTestData = allRelTestDataInit.T.drop_duplicates().T  # Remove duplications from "allRelTrainDataInit" dataframe
 
                 # testDistVar = currModelState[bestParams['featuresDist']].to_numpy()
                 test_dist={}; train_dist={}; distSumSqr = 0
                 for varForDist in bestParams['featuresDist']:
-                    test_dist[varForDist] = np.repeat(currModelState[varForDist].to_numpy().T,
-                                                      allModelingData[varForDist].to_numpy().size,
+                    test_dist[varForDist] = np.repeat(currModelState[varForDist],
+                                                      dataDict[var]['allModelingData'][varForDist].to_numpy().size,
                                                       axis=0)
                                                       # dataDict[var]['trainDistVar'].size, axis=0)
-                    train_dist[varForDist] = np.repeat(allModelingData[varForDist].to_numpy(),
-                                                       len(currModelState[varForDist].to_numpy()),
-                                                       axis=1)
+                    # train_dist[varForDist] = np.repeat(dataDict[var]['allModelingData'][varForDist].to_numpy(),
+                    #                                    len(currModelState[varForDist].to_numpy()),
+                    #                                    axis=1)
+                    train_dist[varForDist] = dataDict[var]['allModelingData'][varForDist].to_numpy()
 
                     distVarSqr = (test_dist[varForDist] - train_dist[varForDist]) ** 2
                     distSumSqr += distVarSqr
@@ -433,7 +435,7 @@ def run_and_test_full_model(pref, results, modelingDataCombined, validationData,
                 w = np.argsort(dist, axis=0)[:npoints]
                 deltaVar, x, bias_re,bias_vel = loess_nd_test_point_mat\
                             (pref, pd.DataFrame(relTestData).T, bestParams['features'], dataDict[var]['relTrainData'],
-                             dataDict[var]['trainDistVar'], dataDict[var]['trainResults'], dist,w,scale_params[var],
+                             dataDict[var]['trainDistVar'], dataDict[var]['trainResults'], dist, w, scale_params[var],
                              var, varT, frac=frac1)
                 # for jj in range(1, 1*len(pref['Combinations']), 1): # in case of bias go to the next config
                 for jj in range(1, 10, 1):
